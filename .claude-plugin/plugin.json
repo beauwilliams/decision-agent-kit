@@ -1,7 +1,7 @@
 {
-  "name": "subq-agent-kit",
+  "name": "decision-agent-kit",
   "version": "0.1.0",
-  "description": "SubQ decision-model checks for coding sessions, starting with a check that a finished turn is really finished.",
+  "description": "Decision-model checks for coding sessions, starting with a check that a finished turn is really finished. Uses SubQ Snap.",
   "author": {
     "name": "Beau Williams"
   },

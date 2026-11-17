@@ -1,7 +1,8 @@
-# subq-agent-kit
+# decision-agent-kit
 
-A Claude Code plugin that asks [SubQ](https://subq.ai) decision models typed questions about a
-coding session and acts on the probabilities. A decision model returns a yes/no probability, a
+A Claude Code plugin that asks a decision model typed questions about a coding session and acts on
+the probabilities. It uses [SubQ](https://subq.ai) Snap today; TypeSafe Jev and Levanto Sage are
+planned (ADR-7). A decision model returns a yes/no probability, a
 choice or a score, and no generated text, so a check costs about a second and a fraction of a cent.
 
 The first check is the **stop check**: when a turn ends, did the agent really finish?
@@ -37,7 +38,7 @@ Every feature has a mode, set in the plugin's options:
 | `shadow` | Decides and records the decision; shows nothing. The default |
 | `on`     | Shows a note under a reply it flags                          |
 
-Decisions are appended to `~/.claude/subq-agent-kit/ledger/<session id>.jsonl`. The ledger holds
+Decisions are appended to `~/.claude/decision-agent-kit/ledger/<session id>.jsonl`. The ledger holds
 verdicts, probabilities and counts, not session text.
 
 `/subq` shows what was decided this session. `/subq good` and `/subq bad` label the last decision,
@@ -49,7 +50,7 @@ Function hooks are early access in Claude Code:
 
 ```sh
 export CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1
-claude --plugin-dir /path/to/subq-agent-kit
+claude --plugin-dir /path/to/decision-agent-kit
 ```
 
 The SubQ API key is read from the plugin's `apiKey` option, then the `SUBQ_API_KEY` variable, then
