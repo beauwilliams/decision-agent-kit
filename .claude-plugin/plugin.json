@@ -1,0 +1,52 @@
+{
+  "name": "subq-agent-kit",
+  "version": "0.1.0",
+  "description": "SubQ decision-model checks for coding sessions, starting with a check that a finished turn is really finished.",
+  "author": {
+    "name": "Beau Williams"
+  },
+  "license": "MIT",
+  "userConfig": {
+    "stopCheck": {
+      "type": "string",
+      "title": "Stop check",
+      "description": "off: never runs. shadow: records what it would say and shows nothing. on: shows a note under a reply it flags.",
+      "options": ["off", "shadow", "on"],
+      "default": "shadow"
+    },
+    "apiKey": {
+      "type": "string",
+      "title": "SubQ API key",
+      "description": "Leave unset to use SUBQ_API_KEY or the key command.",
+      "sensitive": true
+    },
+    "apiKeyCommand": {
+      "type": "string",
+      "title": "Key command",
+      "description": "A command that prints the SubQ API key, run without a shell when no key is set, such as a password manager's read command."
+    },
+    "disabledPaths": {
+      "type": "string",
+      "title": "Disabled directories",
+      "description": "Comma-separated absolute paths. A session started under one sends nothing to SubQ."
+    },
+    "claimThreshold": {
+      "type": "number",
+      "title": "Claim threshold",
+      "description": "Probability at or above which a reply counts as claiming the change works.",
+      "default": 0.7
+    },
+    "unfinishedThreshold": {
+      "type": "number",
+      "title": "Unfinished threshold",
+      "description": "Probability at or above which a reply counts as leaving requested work undone.",
+      "default": 0.7
+    },
+    "model": {
+      "type": "string",
+      "title": "SubQ model",
+      "description": "The decision model ID. Thresholds are tuned against the default.",
+      "default": "subq-snap-1.2"
+    }
+  }
+}

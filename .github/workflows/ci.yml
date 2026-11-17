@@ -1,0 +1,55 @@
+name: ci
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: make install
+      - run: make fmt-check
+      - run: make lint
+      - run: make check
+      - run: make test
+
+  records:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: urzuahq/urzua/.github/actions/urzua-gate@44683769da04baab32cf1c00d26682f1c0abdaac # v0.4.6
+        with:
+          version: v0.4.6
+          base-ref: ${{ github.base_ref }}
+
+  ci:
+    if: always()
+    needs: [checks, records]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every job to have passed
+        run: |
+          test "${{ needs.checks.result }}" = "success"
+          test "${{ needs.records.result }}" = "success"

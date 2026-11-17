@@ -1,0 +1,11 @@
+node_modules/
+pnpm-lock.yaml
+.claude-plugin/types/
+.urzua/templates/
+docs/adr/
+docs/rfc/
+docs/spec/
+eval/out/
+docs/task/
+docs/milestone/
+docs/epic/
