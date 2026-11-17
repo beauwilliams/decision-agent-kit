@@ -4,6 +4,7 @@ Status: Open
 Date: 2026-11-17
 Author: beauwilliams
 Kind: feature
+Milestone: MILE-2
 Depends-on: TASK-1
 ---
 # 2 — Set the stop check thresholds from replayed sessions

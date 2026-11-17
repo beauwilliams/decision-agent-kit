@@ -4,6 +4,7 @@ Status: Open
 Date: 2026-11-17
 Author: beauwilliams
 Kind: chore
+Milestone: MILE-4
 ---
 # 3 — Find out what Codex hooks hand a command
 
