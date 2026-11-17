@@ -89,7 +89,7 @@ async function apiKey($: EngineInterface, config: Config): Promise<string> {
 
 async function ledgerPath($: EngineInterface): Promise<string> {
   const home = (await $.env.get('HOME')) ?? '';
-  return `${home}/.claude/subq-agent-kit/ledger/${await $.session.id()}.jsonl`;
+  return `${home}/.claude/decision-agent-kit/ledger/${await $.session.id()}.jsonl`;
 }
 
 async function readLedger($: EngineInterface): Promise<string> {
