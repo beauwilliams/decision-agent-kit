@@ -1,0 +1,4 @@
+Session bed46a1c-f72c-4b62-a833-1e2ad06f46fd, run with a wrong key on 2026-11-17.
+The session returned its answer and exited normally. No ledger file was written for it.
+Line from the session's debug log:
+2026-11-17T02:56:59.051Z [DEBUG] [subq-agent-kit] $.ui.log: stop check skipped: SubQ 401 authentication_error: Missing or invalid API key.
