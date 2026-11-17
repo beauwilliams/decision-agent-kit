@@ -360,14 +360,48 @@ rules:
   status.delivery-agreement: error
   status.done-items-shape: error
   status.waived-item-stale: warn
+  diff.decider-required:
+    level: error
+    require_evidence: true
   header.pointer-field-clean: warn
   sequence.cycle: error
   sequence.unresolved-blocker: error
 authority:
   decider_table: base
   waivable: never
+  deciders:
+    maintainers:
+      logins:
+        - beauwilliams
+  gates:
+    - type: adr
+      to:
+        - Accepted
+      by: maintainers
+    - type: rfc
+      to:
+        - Accepted
+      by: maintainers
+    - type: spec
+      to:
+        - Accepted
+      by: maintainers
+    - paths:
+        - .urzua/config.yaml
+        - .claude
+        - .github/workflows
+      by: maintainers
 harness:
   outside_writes: shared
+  adapters:
+    - claude-code
+  guardrails:
+    acceptance:
+      enabled: true
+    protected-paths:
+      enabled: true
+    post-command:
+      enabled: true
 
 # Examine a record `urzua new` just wrote before it is staged.
 discovery:
