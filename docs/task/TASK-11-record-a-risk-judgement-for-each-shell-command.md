@@ -30,4 +30,5 @@ In shadow mode, each shell command gets a ledger entry saying whether the gate w
 
 - `src/features/risk-gate/gate.ts` holds the read-only list and the two questions; `eval/risk-gate.ts` replays them over recorded commands.
 - The replay does not support wiring it in yet (`docs/evidence/TASK-11/risk-gate-report.txt`, SPEC-3): it would prompt about once in 23 commands, and five in six of those prompts would be for something the person had asked for.
+- Giving the second question the session's earlier requests cut the prompts from 31 to 9, and still caught neither of the two commands labelled as not permitted. Two such commands in 724 is too few to measure on.
 - The plugin registration and the ledger entry are not built.

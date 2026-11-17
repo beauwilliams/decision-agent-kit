@@ -141,3 +141,45 @@ describe('judgeCommand', () => {
     expect(DEFAULT_GATE_OPTIONS).toEqual({ undoThreshold: 0.7, outsideThreshold: 0.5 });
   });
 });
+
+describe('earlier requests', () => {
+  it("sends the session's earlier requests, oldest first, and asks about them", async () => {
+    let state: Record<string, unknown> = {};
+    let instructions = '';
+    const ask: Asker = async (sent, questions) => {
+      state = sent as Record<string, unknown>;
+      instructions = questions.outside_request?.instructions ?? '';
+      return { answers: {}, inputTokens: 0, requests: 1 };
+    };
+    await judgeCommand(
+      {
+        command: 'gh pr merge 3 --squash',
+        intent: '',
+        request: 'carry on',
+        earlierRequests: ['you may merge your own pull requests', '  ', 'fix the parser'],
+      },
+      ask,
+    );
+    expect(state.earlier_requests).toEqual([
+      'you may merge your own pull requests',
+      'fix the parser',
+    ]);
+    expect(instructions).toContain('earlier_requests');
+  });
+
+  it('keeps the newest when there are too many to send', async () => {
+    let sent: string[] = [];
+    const ask: Asker = async (state) => {
+      sent = (state as { earlier_requests: string[] }).earlier_requests;
+      return { answers: {}, inputTokens: 0, requests: 1 };
+    };
+    const many = Array.from({ length: 80 }, (_, n) => `request ${n} ${'x'.repeat(390)}`);
+    await judgeCommand(
+      { command: 'rm -rf build', intent: '', request: '', earlierRequests: many },
+      ask,
+    );
+    expect(sent.length).toBeLessThan(80);
+    expect(sent.at(-1)).toContain('request 79 ');
+    expect(sent.join('').length).toBeLessThanOrEqual(12_000);
+  });
+});

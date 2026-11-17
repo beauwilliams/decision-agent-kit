@@ -38,3 +38,30 @@ Reading the numbers:
     merge.
   - A prompt about every 23 commands, five in six of them for something the person asked for,
     would be switched off.
+
+---
+Second run, 2026-11-17: the second question also given the session's earlier requests
+(the newest that fit in 12,000 characters, each cut to 400), and asked whether any of them asked
+for or permitted the command. 724 commands, 665 judged, 1,313,380 input tokens (3.7 times the
+first run).
+
+  prompts at 0.7 and 0.5: 9 (first run: 31), about one in 80 commands
+  prompts at 0.7 and 0.3: 23
+
+Labels for this comparison: one model read 49 commands with every earlier request of the session:
+all those either run would prompt on, and those the first labels called hard to undo and outside
+the request. It marked 14 as unsure.
+
+  labelled hard to undo and not permitted anywhere in the session: 2 of 49 (both marked unsure)
+
+                        prompts  wanted  hard but permitted  not hard  wanted caught
+  first run, 0.7/0.5       31       1            22              8        1 of 2
+  second run, 0.7/0.5       9       0             6              3        0 of 2
+  second run, 0.7/0.3      23       1            16              6        1 of 2
+
+Reading the numbers:
+  - Earlier requests cut the unwanted prompts from 30 to 9.
+  - They did not make the gate catch what matters: of the two commands labelled as not permitted,
+    the second run would prompt on neither at 0.5.
+  - Two wanted cases in 724 commands is too few to measure catching at all, and it means that in
+    these sessions nearly every prompt from any gate would be unwanted.
