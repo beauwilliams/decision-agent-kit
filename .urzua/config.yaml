@@ -142,8 +142,15 @@ record_types:
       - Blocks
       - Implements
       - Severity
+    field_values:
+      Kind:
+        - feature
+        - bug
+        - chore
     pointer_fields:
-      - Milestone
+      - name: Milestone
+        targets:
+          - milestone
       - Depends-on
       - Blocks
       - Implements
@@ -174,6 +181,12 @@ record_types:
           - WontDo
         Done:
           - InProgress
+      require:
+        - when_field:
+            Kind:
+              - bug
+          fields:
+            - Severity
   milestone:
     dir: docs/milestone
     prefix: MILE
@@ -189,7 +202,9 @@ record_types:
       - Blocks
       - Implements
     pointer_fields:
-      - Epic
+      - name: Epic
+        targets:
+          - epic
       - Depends-on
       - Blocks
       - Implements
@@ -306,6 +321,7 @@ rules:
   status.transition-allowed: warn
   status.unreachable-state: warn
   pointer.resolution: error
+  status.required-field-missing: error
   header.pointer-field-clean: warn
   sequence.cycle: error
   sequence.unresolved-blocker: error
