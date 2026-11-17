@@ -148,7 +148,6 @@ record_types:
       - Blocks
       - Implements
       - Severity
-      - Realized-by
     field_values:
       Kind:
         - feature
@@ -356,10 +355,6 @@ rules:
   status.transition-allowed: warn
   status.unreachable-state: warn
   pointer.resolution: error
-  status.required-field-missing: error
-  status.delivery-agreement: error
-  status.done-items-shape: error
-  status.waived-item-stale: warn
   diff.decider-required: error
   header.pointer-field-clean: warn
   sequence.cycle: error
