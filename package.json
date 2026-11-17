@@ -2,7 +2,7 @@
   "name": "decision-agent-kit",
   "version": "0.1.0",
   "private": true,
-  "description": "Plugin for coding agents that asks a decision model whether the work is really done. SubQ Snap today; Jev and Levanto Sage planned.",
+  "description": "Tooling for coding-agent harnesses to ask a decision model about the session: is the work really done? Claude Code and SubQ Snap today; more harnesses and models planned.",
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@12.18.0",

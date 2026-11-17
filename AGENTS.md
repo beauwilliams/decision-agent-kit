@@ -1,7 +1,8 @@
 # AGENTS.md
 
-A plugin for coding agents that asks a decision model typed questions about an agent session and
-acts on the probabilities. SubQ Snap is the default and the only model called so far (ADR-7). Decisions are recorded in `docs/adr/` and managed with `urzua`; read the
+Tooling that lets a coding agent's harness ask a decision model typed questions about the session
+and act on the probabilities. It targets several harnesses and several models (RFC-1, ADR-7). Today
+the Claude Code plugin is the only adapter and SubQ Snap the only model called. Decisions are recorded in `docs/adr/` and managed with `urzua`; read the
 accepted records before changing behaviour they cover.
 
 ## Rules
