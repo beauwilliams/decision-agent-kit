@@ -39,9 +39,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: urzuahq/urzua/.github/actions/urzua-gate@4d3a998020f578510cb0506d13024676be051ca9 # v0.4.7
+      - uses: urzuahq/urzua/.github/actions/urzua-gate@451778bda18336c08e6df85fdfca5e48143a92a4 # v0.4.8
         with:
-          version: v0.4.7
+          version: v0.4.8
           base-ref: ${{ github.base_ref }}
           actors: 'true'
 
