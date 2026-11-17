@@ -32,3 +32,5 @@ In shadow mode, each large tool result gets a ledger entry with what would be cu
 - `src/features/trim/trim.ts` plans, decides and applies a trim; `eval/trim.ts` replays it over recorded sessions.
 - The replay does not support going further (`docs/evidence/TASK-7/trim-report.txt`, SPEC-2): the model cut 6% of tool output, and lost names the session used later in 11 of 16 trimmed results, the same as keeping only the first and last lines.
 - The plugin registration and the ledger entry are not built. Whether to build them is with the maintainer.
+
+Parked on 2026-11-17. The maintainer, shown the replay results, said: "Yeah, let's park the two gates." The code and measurements stay; no more work until new evidence or a new idea.

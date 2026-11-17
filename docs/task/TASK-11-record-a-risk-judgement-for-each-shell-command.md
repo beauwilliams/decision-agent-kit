@@ -1,6 +1,6 @@
 ---
 Stable-Id: 01M7KN17SHRPXG8SVXT04C4VG8
-Status: InProgress
+Status: Open
 Date: 2026-11-17
 Author: beauwilliams
 Kind: feature
@@ -32,3 +32,5 @@ In shadow mode, each shell command gets a ledger entry saying whether the gate w
 - The replay does not support wiring it in yet (`docs/evidence/TASK-11/risk-gate-report.txt`, SPEC-3): it would prompt about once in 23 commands, and five in six of those prompts would be for something the person had asked for.
 - Giving the second question the session's earlier requests cut the prompts from 31 to 9, and still caught neither of the two commands labelled as not permitted. Two such commands in 724 is too few to measure on.
 - The plugin registration and the ledger entry are not built.
+
+Parked on 2026-11-17. The maintainer, shown the replay results, said: "Yeah, let's park the two gates." The code and measurements stay; no more work until new evidence or a new idea.
