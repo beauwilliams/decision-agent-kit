@@ -1,7 +1,13 @@
 import { createRedactor } from '../../core/redact.ts';
 import { abridge, type Message } from '../../core/transcript.ts';
 import type { Asker, Question } from '../../subq/client.ts';
-import { collectEvidence, ruleVerdict, type RunEvidence, type Verdict } from './evidence.ts';
+import {
+  collectEvidence,
+  ruleVerdict,
+  SHELL_EDIT,
+  type RunEvidence,
+  type Verdict,
+} from './evidence.ts';
 
 export type StopFinding = {
   code: 'failing_check' | 'unverified_claim' | 'unfinished';
@@ -64,6 +70,14 @@ const QUESTIONS: Record<'claims_success' | 'unfinished', Question> = {
 
 function command(text: string): string {
   return abridge(text.replace(/\s+/g, ' ').trim(), COMMAND_CHARS);
+}
+
+function describeEdits(edited: readonly string[]): string {
+  const files = edited.filter((path) => path !== SHELL_EDIT).length;
+  const parts: string[] = [];
+  if (files > 0) parts.push(`${files} file${files === 1 ? '' : 's'} changed`);
+  if (edited.includes(SHELL_EDIT)) parts.push('files changed by shell commands');
+  return parts.join(', ');
 }
 
 function probability(value: number | undefined): number | undefined {
@@ -149,12 +163,11 @@ export async function checkStop(
   if (unfinished !== undefined) result.probabilities.unfinished = unfinished;
 
   if (claims !== undefined && claims >= options.claimThreshold) {
-    const files = evidence.editedFiles.length;
     findings.push({
       code: 'unverified_claim',
       source: 'model',
       probability: claims,
-      message: `the reply says it works, but nothing was run after the last edit (${files} file${files === 1 ? '' : 's'} changed)`,
+      message: `the reply says it works, but nothing was run after the last edit (${describeEdits(evidence.editedFiles)})`,
     });
   }
   if (unfinished !== undefined && unfinished >= options.unfinishedThreshold) {

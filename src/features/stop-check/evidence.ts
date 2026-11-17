@@ -18,6 +18,9 @@ export type Verdict = 'nothing_to_check' | 'verified' | 'failing_check' | 'unver
 
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit', 'MultiEdit']);
 
+/** Stands in `editedFiles` for whatever shell commands changed. */
+export const SHELL_EDIT = '(shell commands)';
+
 const CHECK_COMMAND = new RegExp(
   [
     String.raw`\b(vitest|jest|pytest|mocha|playwright|tsc|eslint|ruff|mypy|nextest)\b`,
@@ -32,6 +35,27 @@ export function isCheckCommand(command: string): boolean {
   return CHECK_COMMAND.test(command);
 }
 
+const WRITE_PROGRAM = new RegExp(
+  [
+    String.raw`(^|[;&|(]\s*|\bxargs\s+)(sudo\s+)?(tee|mv|cp|rm|touch|truncate|patch|install|ln)\b`,
+    String.raw`\b(sed|perl|ruby)\s+(-\S+\s+)*-[a-zA-Z]*i\b`,
+    String.raw`\bsed\s+(-\S+\s+)*--in-place\b`,
+    String.raw`\bgit\s+(apply|am|mv|rm|restore|stash\s+pop|checkout\s+(-\S+\s+)*--\s)`,
+  ].join('|'),
+);
+
+const REDIRECT_TO_FILE = /(?<![0-9&>])>>?\s*(?![&>]|\/dev\/(null|stderr|stdout)\b)[^\s&|;<>]+/;
+
+/**
+ * Whether a shell command changes files. Deliberately broad: a command that
+ * might write is counted as an edit, since the cost of a wrong yes is one
+ * extra question and the cost of a wrong no is a change nobody checks.
+ */
+export function isWriteCommand(command: string): boolean {
+  const unquoted = command.replace(/'[^']*'|"[^"]*"/g, '""');
+  return WRITE_PROGRAM.test(command) || REDIRECT_TO_FILE.test(unquoted);
+}
+
 function turnStart(messages: readonly Message[]): number {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
@@ -44,7 +68,8 @@ function turnStart(messages: readonly Message[]): number {
 
 /**
  * Evidence from the last turn: everything after the newest prompt the person
- * typed. A file changed by a shell command is not seen as an edit.
+ * typed. Shell commands that write count as one edit between them, since the
+ * files they touched are not known.
  */
 export function collectEvidence(messages: readonly Message[]): RunEvidence {
   const start = turnStart(messages);
@@ -69,7 +94,15 @@ export function collectEvidence(messages: readonly Message[]): RunEvidence {
         continue;
       }
       const command = use.input.command;
-      if (use.tool === 'Bash' && typeof command === 'string' && isCheckCommand(command)) {
+      if (use.tool !== 'Bash' || typeof command !== 'string') continue;
+      // One command that writes and checks ("sed -i ... && make test") counts
+      // as the edit followed by the check.
+      if (isWriteCommand(command)) {
+        edited.add(SHELL_EDIT);
+        lastEdit = order;
+        order += 1;
+      }
+      if (isCheckCommand(command)) {
         const isError = errors.get(use.tool_use_id) ?? use.isError ?? false;
         checks.push({ command, passed: !isError, order });
       }

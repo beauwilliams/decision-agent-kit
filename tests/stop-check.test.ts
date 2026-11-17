@@ -6,6 +6,7 @@ import { checkStop } from '../src/features/stop-check/check.ts';
 import {
   collectEvidence,
   isCheckCommand,
+  isWriteCommand,
   ruleVerdict,
 } from '../src/features/stop-check/evidence.ts';
 
@@ -169,5 +170,63 @@ describe('checkStop', () => {
     expect(sent).not.toContain('abcdefghijklmnopqrstuvwxyz0123');
     expect(result.redactions).toBe(1);
     expect(result.findings).toEqual([]);
+  });
+});
+
+describe('shell commands that write', () => {
+  it.each([
+    "sed -i 's/a/b/' src/x.ts",
+    'cd repo && sed -E -i s/a/b/ x',
+    'cat > notes.md <<EOF',
+    'echo done >> log.txt',
+    'python3 gen.py | tee out.json',
+    'mv a.ts b.ts',
+    'git apply fix.patch',
+    'make build && cp dist/a.js lib/',
+  ])('counts %s as a write', (command) => {
+    expect(isWriteCommand(command)).toBe(true);
+  });
+
+  it.each([
+    'ls -la src',
+    'grep -rn "a > b" src',
+    'git status --short',
+    'make test 2>&1 | tail -5',
+    'cat file.txt > /dev/null',
+    'node -e "console.log(1 >= 0)"',
+    'git log --oneline | head',
+    'curl -s https://example.com 2>/dev/null',
+  ])('does not count %s as a write', (command) => {
+    expect(isWriteCommand(command)).toBe(false);
+  });
+
+  const verdictOf = (...steps: Message[][]): string => ruleVerdict(collectEvidence(turn(...steps)));
+
+  it('makes a turn that only edits through the shell unverified', () => {
+    expect(verdictOf(call('Bash', { command: "sed -i 's/a/b/' src/x.ts" }))).toBe('unverified');
+  });
+
+  it('keeps a turn of read-only commands at nothing to check', () => {
+    expect(
+      verdictOf(call('Bash', { command: 'git status' }), call('Bash', { command: 'ls' })),
+    ).toBe('nothing_to_check');
+  });
+
+  it('treats one command that writes then checks as checked', () => {
+    expect(verdictOf(call('Bash', { command: "sed -i 's/a/b/' x.ts && make test" }))).toBe(
+      'verified',
+    );
+    expect(verdictOf(call('Bash', { command: "sed -i 's/a/b/' x.ts && make test" }, true))).toBe(
+      'failing_check',
+    );
+  });
+
+  it('needs a check after the last shell write', () => {
+    expect(
+      verdictOf(
+        call('Bash', { command: 'make test' }),
+        call('Bash', { command: 'echo x >> a.ts' }),
+      ),
+    ).toBe('unverified');
   });
 });

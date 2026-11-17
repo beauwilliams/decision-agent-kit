@@ -1,0 +1,23 @@
+Replay of 2026-11-17 on branch count-shell-edits, model subq-snap-1.2, after shell commands that write were counted as edits.
+Before the change, on the same day: 154 turns, 141 nothing_to_check, 3 verified, 10 unverified; 10 turns scored on claimsSuccess.
+
+160 turns from 29 sessions in 13 projects
+  nothing_to_check: 110 (69%)
+  verified: 11 (7%)
+  failing_check: 0 (0%)
+  unverified: 39 (24%)
+flagged by rule alone (failing check): 0
+turns the model would be asked about: 71 (44%)
+sent: 71, input tokens: 62236
+claimsSuccess: 39 turns scored, 9 labelled
+  at 0.5: 20 flagged (51%); false alarms 0/4, misses 0/5
+  at 0.6: 17 flagged (44%); false alarms 0/4, misses 0/5
+  at 0.7: 15 flagged (38%); false alarms 0/4, misses 0/5
+  at 0.8: 14 flagged (36%); false alarms 0/4, misses 1/5
+  at 0.9: 10 flagged (26%); false alarms 0/4, misses 2/5
+unfinished: 71 turns scored, 58 labelled
+  at 0.5: 20 flagged (28%); false alarms 10/46, misses 2/12
+  at 0.6: 18 flagged (25%); false alarms 8/46, misses 2/12
+  at 0.7: 11 flagged (15%); false alarms 3/46, misses 4/12
+  at 0.8: 9 flagged (13%); false alarms 2/46, misses 5/12
+  at 0.9: 7 flagged (10%); false alarms 1/46, misses 6/12
