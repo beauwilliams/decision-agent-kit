@@ -2,7 +2,7 @@ import type { Message } from '../../core/transcript.ts';
 
 export type CheckRun = {
   command: string;
-  /** `null` when the harness reports no outcome for the command. */
+  /** `null` when the harness reports no outcome, or the exit status may not be the check's. */
   passed: boolean | null;
   afterLastEdit: boolean;
   /** The text the command printed; empty when the transcript has none. */
@@ -59,6 +59,19 @@ export function isWriteCommand(command: string): boolean {
   return WRITE_PROGRAM.test(command) || REDIRECT_TO_FILE.test(unquoted);
 }
 
+const HIDES_EXIT_STATUS = /\||;|\n|(?<!&)&(?!&)/;
+
+/**
+ * Whether a command's exit status can be something other than its check's:
+ * a pipe reports the last program, `;` and a new line report the last command,
+ * `||` swallows a failure, and `&` does not wait. `&&` alone is safe, since
+ * any failure in the chain is the status.
+ */
+export function hidesExitStatus(command: string): boolean {
+  const unquoted = command.replace(/'[^']*'|"[^"]*"/g, '""').replace(/[0-9]?>&[0-9-]/g, '');
+  return HIDES_EXIT_STATUS.test(unquoted.trim());
+}
+
 function turnStart(messages: readonly Message[]): number {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
@@ -109,7 +122,8 @@ export function collectEvidence(messages: readonly Message[]): RunEvidence {
         const result = results.get(use.tool_use_id);
         const isError = result?.isError ?? use.isError ?? false;
         const output = result?.text ?? use.text ?? '';
-        checks.push({ command, passed: use.outcomeUnknown ? null : !isError, output, order });
+        const unknown = use.outcomeUnknown === true || hidesExitStatus(command);
+        checks.push({ command, passed: unknown ? null : !isError, output, order });
       }
     }
   }

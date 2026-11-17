@@ -1,0 +1,15 @@
+2026-11-17. Recorded Claude Code sessions on the development machine: 183 finished turns.
+
+Turns whose newest check after the last edit decided the verdict: 20.
+  Every one ran its check behind a pipe, `;`, `||` or a new line, so all 20 now have no trusted
+  outcome and go to the `check_failed` question. None is still settled by the exit status.
+
+Of those 20:
+  19 exited cleanly, so the rule recorded them as verified.
+  Labels (one model, exit status and scores withheld): 18 passed, 1 failed, 1 not in the labelled sample.
+  The question at 0.7 and 0.3 (scores from docs/evidence/TASK-19/check-outcome-report.txt):
+    called passed 17, called failed 2, left unknown 0, 1 not scored.
+    agrees with the label on 18 of the 19 labelled turns.
+
+So on the labelled turns the exit status was wrong once (a failure recorded as verified) and the
+question was wrong once (a pass called a failure).

@@ -6,6 +6,7 @@ import { checkStop } from '../src/features/stop-check/check.ts';
 import { outputExcerpt } from '../src/features/stop-check/outcome.ts';
 import {
   collectEvidence,
+  hidesExitStatus,
   isCheckCommand,
   isWriteCommand,
   ruleVerdict,
@@ -449,5 +450,40 @@ describe('outputExcerpt', () => {
     expect(excerpt.endsWith('END')).toBe(true);
     expect(excerpt).toContain('chars omitted');
     expect(excerpt.length).toBeLessThanOrEqual(400 + 40);
+  });
+});
+
+describe("an exit status that may not be the check's", () => {
+  it.each([
+    ['make test 2>&1 | tail -5', true],
+    ['pnpm test; git status', true],
+    ['pnpm test || true', true],
+    ['make ci &', true],
+    ['cd app\nmake test', true],
+    ['make test', false],
+    ['cd app && make test', false],
+    ['make test 2>&1', false],
+    ['pnpm vitest run -t "a | b; c"', false],
+  ])('%s', (command, hidden) => {
+    expect(hidesExitStatus(command)).toBe(hidden);
+  });
+
+  it('gives a piped check no outcome, so the model decides it', async () => {
+    const messages = turn(
+      call('Edit', { file_path: 'a.ts' }),
+      call('Bash', { command: 'make test 2>&1 | tail -3' }, false, { text: '2 failed' }),
+    );
+    expect(ruleVerdict(collectEvidence(messages))).toBe('unknown');
+    const failed = await checkStop(messages, 'All done, tests pass.', asker({ check_failed: 0.9 }));
+    expect(failed.verdict).toBe('failing_check');
+    expect(failed.findings[0]?.source).toBe('model');
+  });
+
+  it('still settles a plain check by its exit status', () => {
+    const passed = turn(
+      call('Edit', { file_path: 'a.ts' }),
+      call('Bash', { command: 'make test' }),
+    );
+    expect(ruleVerdict(collectEvidence(passed))).toBe('verified');
   });
 });

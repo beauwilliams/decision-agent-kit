@@ -2,7 +2,7 @@
 Stable-Id: 01M7KARRTPC9FYZRJ21SZ3VHXR
 Status: Draft
 Date: 2026-11-16
-Version: '0.2'
+Version: '0.3'
 Author: beauwilliams
 Subject: Stop check
 ---
@@ -30,7 +30,7 @@ A file changed by a shell command is not seen as an edit.
 | `verified` | The newest check after the last edit passed | Yes, about unfinished work only |
 | `failing_check` | The newest check after the last edit failed | No. Flagged by rule |
 | `unverified` | Files were edited and no check ran afterwards | Yes |
-| `unknown` | The newest check after the last edit has no reported outcome, as in Codex | Yes; the answer to `check_failed` turns it into `verified` or `failing_check`, or leaves it |
+| `unknown` | The newest check after the last edit has no outcome that can be trusted: the harness reports none (Codex), or the command has a pipe, `;`, `||`, `&` or a new line, so its exit status may not be the check's | Yes; the answer to `check_failed` turns it into `verified` or `failing_check`, or leaves it |
 
 ## Questions
 
@@ -87,7 +87,7 @@ Both thresholds stay at 0.7.
 | 0.8 and 0.2 | 89 of 94 | 3 of 23 | 1 of 66 |
 | 0.9 and 0.1 | 82 of 94 | 2 of 18 | 0 of 64 |
 
-The exit status agreed with the labels on 1 of 24 failures: the rest were hidden by a pipe or a following command. The rule verdict `verified` is therefore wrong for such commands wherever it rests on the exit status (TASK-23).
+The exit status agreed with the labels on 1 of 24 failures: the rest were hidden by a pipe or a following command. Such commands are therefore given no outcome and decided by `check_failed` (TASK-23). In 183 recorded turns, all 20 whose verdict rested on a check were of this kind; on the 19 labelled, the exit status was wrong once and the question once, on different turns (`docs/evidence/TASK-23/turn-impact.txt`).
 
 ## Known gaps
 
@@ -105,3 +105,4 @@ The exit status agreed with the labels on 1 of 24 failures: the rest were hidden
 > | 2026-11-17 | Added replay evidence for the thresholds and the known gaps. | **substantive** |
 > | 2026-11-17 | The unfinished finding is asked as two questions; evidence replaced with the replay on two-labeller agreement. | **substantive** |
 > | 2026-11-17 | Added the `unknown` verdict and the `check_failed` question that settles it, with replay evidence. | **substantive** |
+> | 2026-11-17 | A piped or chained check command has no trusted outcome and is decided by `check_failed`. | **substantive** |
