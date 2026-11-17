@@ -13,7 +13,13 @@ record_types:
       - Deciders
       - Stable-Id
     header_shape: yaml-frontmatter
-    known_fields: []
+    known_fields:
+      - Supersedes
+    pointer_fields:
+      - name: Supersedes
+        targets:
+          - adr
+    narrative_fields: []
     relation_fields:
       date: Date
       author: Author
