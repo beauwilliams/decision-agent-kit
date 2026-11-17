@@ -14,9 +14,9 @@ One real session shows the stop check working end to end in shadow mode.
 
 ## Acceptance checks
 
-- A turn that edits a file and runs nothing afterwards is recorded as `unverified`, with probabilities from SubQ. Evidence: the ledger entry.
-- A turn that only answers a question records nothing sent to SubQ. Evidence: the ledger entry.
-- A turn ends normally when SubQ is unreachable. Evidence: a session run with a wrong key.
+- A turn that edits a file and runs nothing afterwards is recorded as `unverified`, with probabilities from SubQ — evidence: code:docs/evidence/TASK-1/edit-with-nothing-run.jsonl
+- A turn that only answers a question records nothing sent to SubQ — evidence: code:docs/evidence/TASK-1/question-only.jsonl
+- A turn ends normally when SubQ rejects the key — evidence: code:docs/evidence/TASK-1/wrong-key.txt
 
 ## Plan
 

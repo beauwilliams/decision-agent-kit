@@ -15,9 +15,9 @@ The two thresholds are chosen from data, and the record that turns the stop chec
 
 ## Acceptance checks
 
-- A command replays recorded sessions through the stop check and writes one row per turn with the rule verdict and probabilities. Evidence: its output file.
-- The report says how often each finding fired and on which turns. Evidence: the report.
-- The thresholds in the spec are replaced by ones the report supports, or kept with the numbers that support them. Evidence: a revision of SPEC-1.
+- A command replays recorded sessions through the stop check and writes one row per turn with the rule verdict and probabilities — evidence: test:tests/replay.test.ts
+- The report says how often each finding fired at each threshold — evidence: code:docs/evidence/TASK-2/replay-report.txt
+- The thresholds in the spec are replaced by ones the report supports, or kept with the numbers that support them — evidence: spec:docs/spec/SPEC-1-stop-check.md
 
 ## Plan
 
