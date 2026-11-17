@@ -26,6 +26,23 @@ function call(tool: string, input: Record<string, unknown>, failed = false): Mes
   ];
 }
 
+function unknownCall(command: string): Message[] {
+  const id = `t${++nextId}`;
+  return [
+    {
+      role: 'assistant',
+      text: '',
+      toolUses: [{ tool_use_id: id, tool: 'Bash', input: { command }, outcomeUnknown: true }],
+    },
+    {
+      role: 'user',
+      text: '',
+      toolUses: [],
+      toolResults: [{ tool_use_id: id, text: 'output', isError: false }],
+    },
+  ];
+}
+
 function turn(...steps: Message[][]): Message[] {
   return [
     { role: 'user', text: 'earlier prompt', toolUses: [] },
@@ -249,5 +266,43 @@ describe('shell commands that write', () => {
         call('Bash', { command: 'echo x >> a.ts' }),
       ),
     ).toBe('unverified');
+  });
+});
+
+describe('a check with no reported outcome', () => {
+  const afterEdit = () => turn(call('Edit', { file_path: 'a.ts' }), unknownCall('node --test'));
+
+  it('has passed null and the verdict unknown', () => {
+    const evidence = collectEvidence(afterEdit());
+    expect(evidence.checks).toEqual([
+      { command: 'node --test', passed: null, afterLastEdit: true },
+    ]);
+    expect(ruleVerdict(evidence)).toBe('unknown');
+  });
+
+  it('is unverified again when an edit follows it', () => {
+    expect(
+      ruleVerdict(
+        collectEvidence(turn(unknownCall('node --test'), call('Edit', { file_path: 'a.ts' }))),
+      ),
+    ).toBe('unverified');
+  });
+
+  it('asks only the unfinished and waiting questions and raises no rule finding', async () => {
+    const ask = asker({ states_unfinished: 0.1 });
+    const result = await checkStop(afterEdit(), 'done', ask);
+    expect(result.verdict).toBe('unknown');
+    expect(result.findings).toEqual([]);
+    expect(Object.keys(ask.asked[0] ?? {}).sort()).toEqual(['needs_user', 'states_unfinished']);
+  });
+
+  it('passes null through to the model state', async () => {
+    let state: { run_facts: { checks_run: { passed: unknown }[] } } | undefined;
+    const ask: Asker = async (given) => {
+      state = given as typeof state;
+      return { answers: {}, inputTokens: 0, requests: 1 };
+    };
+    await checkStop(afterEdit(), 'done', ask);
+    expect(state?.run_facts.checks_run[0]?.passed).toBeNull();
   });
 });
