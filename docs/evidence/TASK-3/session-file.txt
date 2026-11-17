@@ -1,0 +1,14 @@
+Codex 0.167.2, `codex exec`, 2026-11-17, in a scratch CODEX_HOME.
+
+Where: <CODEX_HOME>/sessions/<yyyy>/<mm>/<dd>/rollout-<timestamp>-<session id>.jsonl
+The same path is given to every hook as `transcript_path`.
+
+Format: one JSON object per line, each with `type` and `payload`. Types seen in a one-turn session:
+  session_meta, turn_context, world_state, token_usage_record
+  event_msg        payload.type: task_started, item_completed, token_count, task_complete (carries last_agent_message)
+  response_item    payload.type: message (role developer, user or assistant), additional_tools, custom_tool_call
+
+A shell command appears as a `custom_tool_call` named `exec` whose `input` is a string of code,
+for example: const r = await tools.exec_command({cmd:"cat add.js", ...});
+The command is inside that string, not a field. The PreToolUse and PostToolUse hooks carry the same
+call as `tool_name: "Bash"` with `tool_input.command` and `tool_response`, which needs no parsing.
