@@ -19,8 +19,10 @@ export type StopFinding = {
 export type StopCheckOptions = {
   /** Probability at or above which "claims it works" counts. */
   claimThreshold: number;
-  /** Probability at or above which "left work undone" counts. */
+  /** Probability at or above which "says requested work is not done" counts. */
   unfinishedThreshold: number;
+  /** Probability at or above which the reply is taken to be waiting on the person, which clears the finding. */
+  waitingThreshold: number;
   /** A turn with no edits is asked about only when it made at least this many tool calls. */
   minToolCalls: number;
 };
@@ -28,6 +30,7 @@ export type StopCheckOptions = {
 export const DEFAULT_STOP_CHECK_OPTIONS: StopCheckOptions = {
   claimThreshold: 0.7,
   unfinishedThreshold: 0.7,
+  waitingThreshold: 0.5,
   minToolCalls: 3,
 };
 
@@ -35,7 +38,7 @@ export type StopCheckResult = {
   verdict: Verdict;
   findings: StopFinding[];
   asked: boolean;
-  probabilities: { claimsSuccess?: number; unfinished?: number };
+  probabilities: { claimsSuccess?: number; statesUnfinished?: number; needsUser?: number };
   facts: { toolCalls: number; filesEdited: number; checksRun: number; checksAfterLastEdit: number };
   inputTokens: number;
   redactions: number;
@@ -45,7 +48,7 @@ const ANSWER_CHARS = 6000;
 const REQUEST_CHARS = 3000;
 const COMMAND_CHARS = 200;
 
-const QUESTIONS: Record<'claims_success' | 'unfinished', Question> = {
+const QUESTIONS: Record<'claims_success' | 'states_unfinished' | 'needs_user', Question> = {
   claims_success: {
     type: 'noul',
     instructions:
@@ -56,14 +59,24 @@ const QUESTIONS: Record<'claims_success' | 'unfinished', Question> = {
         'It makes no claim that the change works, or says plainly that it was not run or tested',
     },
   },
-  unfinished: {
+  states_unfinished: {
     type: 'noul',
     instructions:
-      'Does `final_message` leave part of what `user_request` asked for undone in this turn?',
+      'Does `final_message` say that part of what `user_request` asked for was not done, was skipped, or is left for later?',
     criteria: {
-      true: 'It stops to ask whether to continue, offers to do remaining steps, or reports requested work as not done',
+      true: 'It names requested work as not done, not started, skipped, deferred, or offered as a next step',
       false:
-        'Everything the request asked for is reported as done, or the request was only a question',
+        'It reports the requested work as done, or the request was only a question and it is answered',
+    },
+  },
+  needs_user: {
+    type: 'noul',
+    instructions:
+      'Does `final_message` need a decision or information from the user that `user_request` did not already give?',
+    criteria: {
+      true: 'It asks the user to choose between options, to approve something risky or outside the request, or to supply missing information',
+      false:
+        'It asks nothing of the user, or asks only whether to continue with work the request already asked for',
     },
   },
 };
@@ -108,7 +121,9 @@ export function buildState(
 /**
  * Judges the end of a turn. Rules settle what the transcript proves (a failing
  * check, a passing one); the model is asked only how the final message reads,
- * and only for a turn that did real work.
+ * and only for a turn that did real work. Each question is one judgment, and
+ * the code combines them: unfinished work is flagged unless the reply is
+ * waiting on something only the person can give.
  */
 export async function checkStop(
   messages: readonly Message[],
@@ -149,7 +164,10 @@ export async function checkStop(
   const didWork = verdict !== 'nothing_to_check' || evidence.toolCalls >= options.minToolCalls;
   if (!didWork || answer.trim() === '') return result;
 
-  const questions: Record<string, Question> = { unfinished: QUESTIONS.unfinished };
+  const questions: Record<string, Question> = {
+    states_unfinished: QUESTIONS.states_unfinished,
+    needs_user: QUESTIONS.needs_user,
+  };
   if (verdict === 'unverified') questions.claims_success = QUESTIONS.claims_success;
 
   const asked = await ask(buildState(evidence, answer, redact), questions);
@@ -158,9 +176,11 @@ export async function checkStop(
   result.redactions = redact.count;
 
   const claims = probability(asked.answers.claims_success?.noul);
-  const unfinished = probability(asked.answers.unfinished?.noul);
+  const unfinished = probability(asked.answers.states_unfinished?.noul);
+  const needsUser = probability(asked.answers.needs_user?.noul);
   if (claims !== undefined) result.probabilities.claimsSuccess = claims;
-  if (unfinished !== undefined) result.probabilities.unfinished = unfinished;
+  if (unfinished !== undefined) result.probabilities.statesUnfinished = unfinished;
+  if (needsUser !== undefined) result.probabilities.needsUser = needsUser;
 
   if (claims !== undefined && claims >= options.claimThreshold) {
     findings.push({
@@ -170,12 +190,14 @@ export async function checkStop(
       message: `the reply says it works, but nothing was run after the last edit (${describeEdits(evidence.editedFiles)})`,
     });
   }
-  if (unfinished !== undefined && unfinished >= options.unfinishedThreshold) {
+  // An unanswered needs_user clears nothing: only a clear "waiting on the person" does.
+  const waiting = needsUser !== undefined && needsUser >= options.waitingThreshold;
+  if (unfinished !== undefined && unfinished >= options.unfinishedThreshold && !waiting) {
     findings.push({
       code: 'unfinished',
       source: 'model',
       probability: unfinished,
-      message: 'the reply leaves requested work undone',
+      message: 'the reply leaves requested work undone without needing anything from you',
     });
   }
   return result;

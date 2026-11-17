@@ -121,7 +121,7 @@ describe('checkStop', () => {
   });
 
   it('asks nothing about a turn that did no work', async () => {
-    const ask = asker({ unfinished: 1 });
+    const ask = asker({ states_unfinished: 1 });
     const result = await checkStop(
       turn(call('Read', { file_path: 'a.ts' })),
       'It parses JSON.',
@@ -146,14 +146,35 @@ describe('checkStop', () => {
   });
 
   it('does not ask whether a verified turn claims success', async () => {
-    const ask = asker({ unfinished: 0.95 });
+    const ask = asker({ states_unfinished: 0.95, needs_user: 0.1 });
     const result = await checkStop(
       turn(call('Edit', { file_path: 'a.ts' }), call('Bash', { command: 'pnpm test' })),
       'Tests pass. Want me to do the other two files?',
       ask,
     );
-    expect(Object.keys(ask.asked[0] ?? {})).toEqual(['unfinished']);
+    expect(Object.keys(ask.asked[0] ?? {})).toEqual(['states_unfinished', 'needs_user']);
     expect(result.findings.map((finding) => finding.code)).toEqual(['unfinished']);
+  });
+
+  it('does not flag unfinished work when the reply is waiting on the person', async () => {
+    const messages = turn(
+      call('Edit', { file_path: 'a.ts' }),
+      call('Bash', { command: 'pnpm test' }),
+    );
+    const waiting = await checkStop(
+      messages,
+      'Half is done. The rest deletes the old table: do you want that?',
+      asker({ states_unfinished: 0.95, needs_user: 0.9 }),
+    );
+    expect(waiting.findings).toEqual([]);
+    expect(waiting.probabilities).toEqual({ statesUnfinished: 0.95, needsUser: 0.9 });
+
+    const unanswered = await checkStop(
+      messages,
+      'Half is done.',
+      asker({ states_unfinished: 0.95 }),
+    );
+    expect(unanswered.findings.map((finding) => finding.code)).toEqual(['unfinished']);
   });
 
   it('redacts credentials from the state it sends', async () => {

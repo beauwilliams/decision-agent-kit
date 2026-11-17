@@ -72,28 +72,30 @@ describe('report', () => {
     answer: '',
   };
   const rows: Row[] = [
-    { ...base, turn: 0, unfinished: 0.95, claimsSuccess: 0.9 },
-    { ...base, turn: 1, unfinished: 0.65, claimsSuccess: 0.2 },
+    { ...base, turn: 0, statesUnfinished: 0.95, needsUser: 0.1, claimsSuccess: 0.9 },
+    { ...base, turn: 1, statesUnfinished: 0.65, needsUser: 0.2, claimsSuccess: 0.2 },
+    { ...base, turn: 3, statesUnfinished: 0.99, needsUser: 0.8 },
     { ...base, turn: 2, verdict: 'nothing_to_check', wouldAsk: false, sent: false, inputTokens: 0 },
   ];
 
   it('counts verdicts and what was sent', () => {
     const text = report(rows);
-    expect(text).toContain('3 turns from 1 sessions in 1 projects');
-    expect(text).toContain('unverified: 2 (67%)');
-    expect(text).toContain('sent: 2, input tokens: 200');
+    expect(text).toContain('4 turns from 1 sessions in 1 projects');
+    expect(text).toContain('unverified: 3 (75%)');
+    expect(text).toContain('sent: 3, input tokens: 300');
   });
 
   it('counts false alarms and misses at each threshold when labels exist', () => {
     const text = report(rows, [
-      { session: 's', turn: 0, unfinished: false, claims: true },
-      { session: 's', turn: 1, unfinished: true, claims: false },
+      { session: 's', turn: 0, needlessStop: false, claims: true },
+      { session: 's', turn: 1, needlessStop: true, claims: false },
+      { session: 's', turn: 3, needlessStop: false },
     ]);
-    expect(text).toContain('unfinished: 2 turns scored, 2 labelled');
-    expect(text).toContain('at 0.7: 1 flagged (50%); false alarms 1/1, misses 1/1');
-    expect(text).toContain('at 0.6: 2 flagged (100%); false alarms 1/1, misses 0/1');
+    expect(text).toContain('unfinished: 3 turns scored, 3 labelled');
+    expect(text).toContain('at 0.7: 1 flagged (33%); false alarms 1/2, misses 1/1');
+    expect(text).toContain('at 0.6: 2 flagged (67%); false alarms 1/2, misses 0/1');
     expect(text).toMatch(
-      /claimsSuccess: 2 turns scored, 2 labelled\n {2}at 0\.5: 1 flagged \(50%\); false alarms 0\/1, misses 0\/1/,
+      /unverified_claim: 2 turns scored, 2 labelled\n {2}at 0\.5: 1 flagged \(50%\); false alarms 0\/1, misses 0\/1/,
     );
   });
 });

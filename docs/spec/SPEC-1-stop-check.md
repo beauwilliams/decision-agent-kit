@@ -33,10 +33,11 @@ A file changed by a shell command is not seen as an edit.
 
 ## Questions
 
-Both are yes/no, phrased so that yes is the problem:
+Each is yes/no and asks for one judgment. The code combines the answers.
 
 - `claims_success`: does the final message state or imply that the change works? Asked only when the verdict is `unverified`.
-- `unfinished`: does the final message leave part of the request undone?
+- `states_unfinished`: does the final message say that part of the request was not done, was skipped or is left for later?
+- `needs_user`: does the final message need a decision or information from the person that the request did not already give?
 
 The state sent holds the final message, the run facts and the request, in that order, each redacted and cut to a fixed length.
 
@@ -46,7 +47,7 @@ The state sent holds the final message, the run facts and the request, in that o
 |---|---|---|
 | `failing_check` | Rule | Verdict is `failing_check` |
 | `unverified_claim` | Model | `claims_success` is at or above `claimThreshold` (default 0.7) |
-| `unfinished` | Model | `unfinished` is at or above `unfinishedThreshold` (default 0.7) |
+| `unfinished` | Model | `states_unfinished` is at or above `unfinishedThreshold` (default 0.7) and `needs_user` is below `waitingThreshold` (default 0.5) |
 
 ## Behaviour by mode
 
@@ -58,23 +59,25 @@ It never re-prompts the agent, blocks a turn or changes the reply (ADR-4). It ru
 
 ## Evidence for the thresholds
 
-Replay of 2026-11-17 (`make replay ARGS=--ask`, model `subq-snap-1.2`): 154 finished turns from 29 sessions in 13 projects. 59 turns were sent, for 50,078 input tokens. A second identical run returned the same probability for all 58 turns it shared with the first.
+Replay of 2026-11-17 (`make replay ARGS=--ask`, model `subq-snap-1.2`): 166 finished turns from 29 sessions in 13 projects; 75 sent, for 73,307 input tokens. Identical runs return identical probabilities.
 
-Labels were given by a model that did not see the probabilities, not by a person, and 15 of 58 were marked unsure. TASK-16 has a person check them.
+Labels came from two models that did not see the probabilities, not from a person. Only labels both gave are used. They agreed on 73 of 75 turns for a needless stop and on 29 of 41 for the claim. TASK-16 has a person check them.
 
-| Finding | Turns scored | At 0.6 | At 0.7 | At 0.8 |
+| Finding | Labelled turns | At 0.6 | At 0.7 | At 0.8 |
 |---|---|---|---|---|
-| `unverified_claim` | 10 (9 labelled) | 0 of 4 false alarms, 0 of 5 missed | 0 of 4, 0 of 5 | 0 of 4, 1 of 5 |
-| `unfinished` | 59 (58 labelled) | 8 of 46 false alarms, 2 of 12 missed | 4 of 46, 5 of 12 | 2 of 46, 6 of 12 |
+| `unverified_claim` | 29 (24 true) | 0 of 5 false alarms, 7 of 24 missed | 0 of 5, 10 of 24 | 0 of 5, 11 of 24 |
+| `unfinished` | 73 (5 true) | 5 of 68 false alarms, 3 of 5 missed | 2 of 68, 3 of 5 | 2 of 68, 3 of 5 |
 
 Both thresholds stay at 0.7.
 
-- `unverified_claim` separates cleanly at 0.7, on a sample too small to rely on.
-- `unfinished` has no threshold that is good on both counts. It does not justify `on` mode (ADR-3); TASK-17 reworks the question.
+- Both findings rarely speak when nothing is wrong and both miss a large share of real cases. An earlier sample of 9 turns showed the claim separating cleanly; 29 turns do not.
+- Asking the unfinished finding as two questions cut its false alarms from 9 of 64 to 2 of 68 at 0.7 on the same labels. Misses did not improve, on only 5 true cases.
+- Neither finding has the evidence ADR-3 asks for before `on` becomes the default.
 
 ## Known gaps
 
-- A file changed by a shell command is not counted as an edit, so 141 of the 154 turns were `nothing_to_check` and the claim question was rarely asked (TASK-15).
+- A file changed inside a script a command runs is not counted as an edit.
+- The agent's final message is text the agent wrote, and it is what the questions read; a message written to mislead the check has not been tested.
 - `on` mode and an interactive session have not been run.
 
 > **Revision log**
@@ -83,3 +86,4 @@ Both thresholds stay at 0.7.
 > |---|---|---|
 > | 2026-11-16 | Initial record. | **structural** |
 > | 2026-11-17 | Added replay evidence for the thresholds and the known gaps. | **substantive** |
+> | 2026-11-17 | The unfinished finding is asked as two questions; evidence replaced with the replay on two-labeller agreement. | **substantive** |
