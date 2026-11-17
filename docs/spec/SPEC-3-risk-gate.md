@@ -2,7 +2,7 @@
 Stable-Id: 01M7MPJ4WPDBM02HD8PKR2Y6NR
 Status: Draft
 Date: 2026-11-17
-Version: '0.1'
+Version: '0.2'
 Author: beauwilliams
 Subject: Risk gate
 ---
@@ -70,14 +70,37 @@ One entry per judged command: the two probabilities, whether a prompt was or wou
 - **Whether it catches what matters:** a labelled set of commands a person would have wanted to see first, and how many the gate picks.
 - **Delay:** the time added to a command in `on` mode, and how often the limit is hit.
 
+## Evidence so far
+
+Replay of 2026-11-17 over 715 recorded shell commands, with labels from one model on 227 of them (`docs/evidence/TASK-11/risk-gate-report.txt`):
+
+| | Result |
+|---|---|
+| Commands on the read-only list, never sent | 59 of 715 (8%) |
+| Prompts at 0.7 and 0.5 | 31, about one in 23 commands |
+| Of those, labelled hard to undo and outside the request | 5 |
+| Labelled hard to undo but asked for | 17 |
+| Labelled not hard to undo | 9 |
+| Commands labelled both, that the gate would prompt on | 5 of 8 |
+
+- `hard_to_undo` holds up: 103 of the 127 commands it scored 0.7 or more were labelled hard to undo, against 4 of 100 others.
+- `outside_request` does not. It reads only the newest request, so a push or a merge the person allowed earlier in the session looks unasked for. Five in six prompts would be for something the person wanted.
+- The read-only list removes little here, because most commands in these sessions are chains.
+
+The gate is not ready for `on`. The next thing to try is giving the second question the session's earlier requests, not only the newest.
+
 ## Known gaps
+
+- The second question cannot see a standing instruction from earlier in the session.
+- The labels come from one model, which marked 39 of 227 as unsure.
 
 - A destructive step inside a script the command runs is not seen.
 - Tools other than `Bash` are not judged.
-- Nothing here has been built or run.
+- The decision function and the replay exist; nothing is wired into a harness.
 
 > **Revision log**
 >
 > | Date | Change | Class |
 > |---|---|---|
 > | 2026-11-17 | Initial record. | **structural** |
+> | 2026-11-17 | Added the first replay evidence: the first question holds up, the second prompts on work the person asked for. | **substantive** |
