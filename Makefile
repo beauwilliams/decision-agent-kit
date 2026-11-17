@@ -32,6 +32,10 @@ test: ## Run the unit tests
 replay: ## Replay recorded sessions through the stop check (ARGS=--ask sends them to the provider)
 	node eval/replay.ts $(ARGS)
 
+.PHONY: plugin-load
+plugin-load: ## Install the plugin into scratch profiles for Claude Code and Codex
+	./scripts/plugin-load-check.sh
+
 .PHONY: records
 records: ## Validate the decision records
 	urzua check

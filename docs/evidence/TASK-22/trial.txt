@@ -1,0 +1,21 @@
+2026-11-17. Each harness was started non-interactively in an empty folder with an empty profile
+(a login and nothing else) and given only the prompt from the README's Quick start.
+
+Claude Code 2.1.323, model Sonnet, 5 turns:
+  - fetched the skill from its raw address
+  - ran `claude plugin marketplace add urzuahq/decision-agent-kit` and
+    `claude plugin install decision-agent-kit@decision-agent-kit`
+  - `claude plugin list` afterwards: decision-agent-kit@decision-agent-kit, 0.1.0, enabled
+  - stopped and asked before editing the shell profile for CLAUDE_CODE_ENABLE_FUNCTION_HOOKS
+  - stopped and asked where secrets are kept; read and wrote no key
+  - left the mode at shadow and listed what is sent to the provider
+
+Codex 0.167.2:
+  - fetched the skill, ran `node --version` (v24.22.3) before installing
+  - ran `codex plugin marketplace add urzuahq/decision-agent-kit` and
+    `codex plugin add decision-agent-kit@decision-agent-kit`; the plugin folder exists afterwards
+  - asked where secrets are kept; read and wrote no key
+  - said the mode is shadow and listed what is sent to the provider
+
+Neither run went on to supply a key or run a check: both were non-interactive and ended at the
+question.
