@@ -1,6 +1,6 @@
 ---
 Stable-Id: 01M7KRZQYVM5M396FN9W4VMR2X
-Status: Proposed
+Status: Accepted
 Date: 2026-11-17
 Author: beauwilliams
 Deciders: beauwilliams
@@ -43,3 +43,4 @@ An observation that cannot be made safe to commit, or that leaves nothing to com
 > | Date | Change | Class |
 > |---|---|---|
 > | 2026-11-17 | Initial record. | **structural** |
+> | 2026-11-17 | Accepted by beauwilliams in conversation on 2026-11-17 ("Yes, you can commit the live evidence run and I'm happy to accept it"); the status was changed by an agent on that instruction. | **structural** |

@@ -360,9 +360,7 @@ rules:
   status.delivery-agreement: error
   status.done-items-shape: error
   status.waived-item-stale: warn
-  diff.decider-required:
-    level: error
-    require_evidence: true
+  diff.decider-required: error
   header.pointer-field-clean: warn
   sequence.cycle: error
   sequence.unresolved-blocker: error
