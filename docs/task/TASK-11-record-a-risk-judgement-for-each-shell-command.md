@@ -1,6 +1,6 @@
 ---
 Stable-Id: 01M7KN17SHRPXG8SVXT04C4VG8
-Status: Open
+Status: InProgress
 Date: 2026-11-17
 Author: beauwilliams
 Kind: feature
@@ -20,9 +20,14 @@ In shadow mode, each shell command gets a ledger entry saying whether the gate w
 
 ## Plan
 
-- [ ] Add the feature under `src/features`.
+- [x] Add the feature under `src/features`.
+- [x] Replay it over recorded commands before wiring it into a harness.
 - [ ] Register it in the plugin with a mode setting.
 
 ## Evidence
 
-None yet.
+2026-11-17, branch `task-11-risk-gate-core`.
+
+- `src/features/risk-gate/gate.ts` holds the read-only list and the two questions; `eval/risk-gate.ts` replays them over recorded commands.
+- The replay does not support wiring it in yet (`docs/evidence/TASK-11/risk-gate-report.txt`, SPEC-3): it would prompt about once in 23 commands, and five in six of those prompts would be for something the person had asked for.
+- The plugin registration and the ledger entry are not built.
