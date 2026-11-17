@@ -2,7 +2,7 @@
 Stable-Id: 01M7MNXAQTQA2B1SQSMF2Q3YGW
 Status: Draft
 Date: 2026-11-17
-Version: '0.1'
+Version: '0.2'
 Author: beauwilliams
 Subject: Trimming tool output
 ---
@@ -81,7 +81,25 @@ One entry per large result: its size, the lines the rules kept, the blocks the m
 - **Harm:** how often text from a cut block is used later in the same session: quoted in a later message, or part of a later tool call's input. Measured by replay, where nothing was really cut.
 - **Delay:** the time added to a tool call in `on` mode.
 
+## Evidence so far
+
+Replay of 2026-11-17 over the 38 `Bash` results of 8,000 characters or more in recorded sessions, nothing really cut (`docs/evidence/TASK-7/trim-report.txt`):
+
+| | Cut | Results trimmed | Results where cut text was used later | Names only in the cut text, used later |
+|---|---|---|---|---|
+| Rules, then the model at 0.2 | 103,160 characters (21% of the large results, 6% of all tool output) | 16 | 11 | 62 of 396 |
+| First and last lines only, same amount kept | 102,304 characters | 16 | 11 | 79 of 440 |
+
+- The rules alone protect 49% of the text in large results, and 7 of the 38 results entirely.
+- The model does not clearly beat keeping the first and last lines. By the test this spec sets, the feature has no case for the model yet.
+- Either way, two in three trimmed results lose a name the session used later. The measure overstates harm, but it is too high to switch anything on.
+- The saving is small: 6% of tool output on these sessions.
+
+Trimming therefore stays unbuilt beyond the decision function and this replay until a better question or a better measure changes these numbers.
+
 ## Open questions
+
+- Whether trimming is worth pursuing at all, given the saving and the evidence above.
 
 - Whether `shadow` should be the default once a person has read what it sends.
 - Whether a provider with a small request limit (32,000 tokens) can take 24 blocks, or needs fewer.
@@ -90,10 +108,11 @@ One entry per large result: its size, the lines the rules kept, the blocks the m
 
 - Output that is one very long line is not split and is kept whole.
 - Subagent conversations are not trimmed.
-- Nothing here has been built or run.
+- The decision function and the replay exist; nothing is wired into a harness.
 
 > **Revision log**
 >
 > | Date | Change | Class |
 > |---|---|---|
 > | 2026-11-17 | Initial record. | **structural** |
+> | 2026-11-17 | Added the first replay evidence: the model does not beat keeping the first and last lines. | **substantive** |
