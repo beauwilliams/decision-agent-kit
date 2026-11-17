@@ -1,0 +1,43 @@
+2026-11-17, `node eval/trim.ts --ask`, model subq-snap-1.2. Recorded Claude Code sessions on the
+development machine, main conversation only. No output text is stored with these numbers.
+
+38 large Bash results; 31 scored by the model
+  total chars: 495950
+  chars the rules protect: 241458 (48.7%)
+  total input tokens: 99252
+  model at cutThreshold 0.1:
+    blocks cut: 73
+    chars cut: 56441 (11.4% of total)
+    samples with any cut: 12
+    used-later is measured at the default threshold only (needs the text)
+  model at cutThreshold 0.2 (default):
+    blocks cut: 114
+    chars cut: 103160 (20.8% of total)
+    samples with any cut: 16
+    samples where cut text was used later: 11
+    names only in the cut text: 396, of which used later: 62
+  model at cutThreshold 0.3:
+    blocks cut: 140
+    chars cut: 136778 (27.6% of total)
+    samples with any cut: 21
+    used-later is measured at the default threshold only (needs the text)
+  model at cutThreshold 0.5:
+    blocks cut: 168
+    chars cut: 166373 (33.5% of total)
+    samples with any cut: 26
+    used-later is measured at the default threshold only (needs the text)
+  baseline (head and tail only, same chars kept as the model at 0.2):
+    chars cut: 102304 (20.6% of total)
+    samples with any cut: 16
+    samples where cut text was used later: 11
+    names only in the cut text: 440, of which used later: 79
+
+Reading the numbers:
+  - 7 of the 38 results left no block to ask about: the rules protected every line.
+  - All tool output in these sessions is 1,655,869 characters, so the model's cut at 0.2 is 6% of it.
+  - "Used later" means a name of 12 or more characters that appears only in the cut text also
+    appears in a later message or tool call of the session. It overstates harm: the name may have
+    come back for another reason. It is the same measure for both rows, so they can be compared.
+  - Keeping the same amount of text with no model (first and last lines only) loses names used
+    later in the same 11 of 16 results, and 79 of 440 names against the model's 62 of 396.
+  - Two identical runs gave identical numbers.
