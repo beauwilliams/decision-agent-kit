@@ -110,8 +110,11 @@ async function main(): Promise<void> {
       if (result.probabilities.claimsSuccess !== undefined) {
         row.claimsSuccess = result.probabilities.claimsSuccess;
       }
-      if (result.probabilities.unfinished !== undefined) {
-        row.unfinished = result.probabilities.unfinished;
+      if (result.probabilities.statesUnfinished !== undefined) {
+        row.statesUnfinished = result.probabilities.statesUnfinished;
+      }
+      if (result.probabilities.needsUser !== undefined) {
+        row.needsUser = result.probabilities.needsUser;
       }
       rows.push(row);
     }

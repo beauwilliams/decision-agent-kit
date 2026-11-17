@@ -9,7 +9,8 @@ export type Row = {
   sent: boolean;
   ruleFinding: boolean;
   claimsSuccess?: number;
-  unfinished?: number;
+  statesUnfinished?: number;
+  needsUser?: number;
   toolCalls: number;
   filesEdited: number;
   checksRun: number;
@@ -18,11 +19,14 @@ export type Row = {
   answer: string;
 };
 
-export type Label = { session: string; turn: number; claims?: boolean; unfinished?: boolean };
+/** `needlessStop`: requested work is left undone and nothing is needed from the person. */
+export type Label = { session: string; turn: number; claims?: boolean; needlessStop?: boolean };
+
+export const WAITING_THRESHOLD = 0.5;
 
 export const THRESHOLDS = [0.5, 0.6, 0.7, 0.8, 0.9];
 
-type Question = 'claimsSuccess' | 'unfinished';
+type Score = (row: Row) => number | undefined;
 
 function count<T>(items: readonly T[], test: (item: T) => boolean): number {
   return items.reduce((sum, item) => sum + (test(item) ? 1 : 0), 0);
@@ -32,22 +36,35 @@ function percent(part: number, whole: number): string {
   return whole === 0 ? 'n/a' : `${Math.round((part / whole) * 100)}%`;
 }
 
-function sweep(rows: readonly Row[], labels: readonly Label[], question: Question): string[] {
-  const scored = rows.filter((row) => typeof row[question] === 'number');
-  const key = question === 'claimsSuccess' ? 'claims' : 'unfinished';
+const claims: Score = (row) => row.claimsSuccess;
+
+/** The unfinished finding's score: zero when the reply is waiting on the person. */
+const needlessStop: Score = (row) => {
+  if (row.statesUnfinished === undefined) return undefined;
+  return (row.needsUser ?? 0) >= WAITING_THRESHOLD ? 0 : row.statesUnfinished;
+};
+
+function sweep(
+  rows: readonly Row[],
+  labels: readonly Label[],
+  name: string,
+  score: Score,
+  key: 'claims' | 'needlessStop',
+): string[] {
+  const scored = rows.filter((row) => score(row) !== undefined);
   const truth = new Map<string, boolean>();
   for (const label of labels) {
     const value = label[key];
     if (typeof value === 'boolean') truth.set(`${label.session}#${label.turn}`, value);
   }
   const labelled = scored.filter((row) => truth.has(`${row.session}#${row.turn}`));
-  const lines = [`${question}: ${scored.length} turns scored, ${labelled.length} labelled`];
+  const lines = [`${name}: ${scored.length} turns scored, ${labelled.length} labelled`];
   for (const threshold of THRESHOLDS) {
-    const flagged = count(scored, (row) => (row[question] ?? 0) >= threshold);
+    const hit = (row: Row): boolean => (score(row) ?? 0) >= threshold;
+    const flagged = count(scored, hit);
     let line = `  at ${threshold.toFixed(1)}: ${flagged} flagged (${percent(flagged, scored.length)})`;
     if (labelled.length > 0) {
       const isTrue = (row: Row): boolean => truth.get(`${row.session}#${row.turn}`) === true;
-      const hit = (row: Row): boolean => (row[question] ?? 0) >= threshold;
       const falseAlarms = count(labelled, (row) => hit(row) && !isTrue(row));
       const misses = count(labelled, (row) => !hit(row) && isTrue(row));
       const negatives = count(labelled, (row) => !isTrue(row));
@@ -79,7 +96,10 @@ export function report(rows: readonly Row[], labels: readonly Label[] = []): str
     `sent: ${count(rows, (row) => row.sent)}, input tokens: ${tokens}`,
   ];
   if (rows.some((row) => row.sent)) {
-    lines.push(...sweep(rows, labels, 'claimsSuccess'), ...sweep(rows, labels, 'unfinished'));
+    lines.push(
+      ...sweep(rows, labels, 'unverified_claim', claims, 'claims'),
+      ...sweep(rows, labels, 'unfinished', needlessStop, 'needlessStop'),
+    );
   }
   return lines.join('\n');
 }

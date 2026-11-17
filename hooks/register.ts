@@ -47,6 +47,11 @@ export function resolveConfig(options: PluginOptions): Config {
         'unfinishedThreshold',
         DEFAULT_STOP_CHECK_OPTIONS.unfinishedThreshold,
       ),
+      waitingThreshold: number(
+        options,
+        'waitingThreshold',
+        DEFAULT_STOP_CHECK_OPTIONS.waitingThreshold,
+      ),
       minToolCalls: DEFAULT_STOP_CHECK_OPTIONS.minToolCalls,
     },
     apiKey: text(options, 'apiKey'),

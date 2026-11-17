@@ -19,10 +19,10 @@ model call. A check that passed after the last edit counts as verified.
 
 SubQ is asked only how the final message reads, and only for a turn that did real work:
 
-| Question                                    | Flagged when                                              |
-| ------------------------------------------- | --------------------------------------------------------- |
-| Does the reply claim the change works?      | Files were edited and nothing was run afterwards          |
-| Does the reply leave requested work undone? | The reply stops to ask, or offers the rest as a next step |
+| Question                                                                  | Flagged when                                                                  |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Does the reply claim the change works?                                    | Files were edited and nothing was run afterwards                              |
+| Does the reply leave requested work undone, with nothing needed from you? | The reply offers the rest as a next step, or stops to ask whether to continue |
 
 A flagged turn gets a note under the reply. The note never re-prompts the agent and never blocks
 anything.
