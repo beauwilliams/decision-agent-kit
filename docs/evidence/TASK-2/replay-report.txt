@@ -1,0 +1,20 @@
+154 turns from 29 sessions in 13 projects
+  nothing_to_check: 141 (92%)
+  verified: 3 (2%)
+  failing_check: 0 (0%)
+  unverified: 10 (6%)
+flagged by rule alone (failing check): 0
+turns the model would be asked about: 59 (38%)
+sent: 59, input tokens: 50078
+claimsSuccess: 10 turns scored, 9 labelled
+  at 0.5: 6 flagged (60%); false alarms 0/4, misses 0/5
+  at 0.6: 6 flagged (60%); false alarms 0/4, misses 0/5
+  at 0.7: 6 flagged (60%); false alarms 0/4, misses 0/5
+  at 0.8: 5 flagged (50%); false alarms 0/4, misses 1/5
+  at 0.9: 3 flagged (30%); false alarms 0/4, misses 2/5
+unfinished: 59 turns scored, 58 labelled
+  at 0.5: 22 flagged (37%); false alarms 12/46, misses 2/12
+  at 0.6: 18 flagged (31%); false alarms 8/46, misses 2/12
+  at 0.7: 11 flagged (19%); false alarms 4/46, misses 5/12
+  at 0.8: 8 flagged (14%); false alarms 2/46, misses 6/12
+  at 0.9: 7 flagged (12%); false alarms 1/46, misses 6/12

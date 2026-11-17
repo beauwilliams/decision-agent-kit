@@ -1,0 +1,10 @@
+Probe on 2026-11-17 with urzua 0.4.7, on a copy of TASK-2 set to Done.
+
+One item's evidence clause removed:
+  status.delivery-agreement (error): TASK-2 is Done but Acceptance checks item 2 "The report says how often each finding fired at each threshold" is unresolved: no evidence clause
+
+The same item citing a file that does not exist:
+  status.delivery-agreement (error): TASK-2 is Done but Acceptance checks item 2 "The report says how often each finding fired at each threshold" is unresolved: locator docs/evidence/TASK-2/nope.txt does not exist
+
+An Open task with one item evidenced and one waived:
+  status.delivery-agreement (error): Status is 'Open', but the evidence computes to 'Implemented', from the Acceptance checks items (1 of 2 items resolved, 1 waived): the work reads as delivered; set Status to 'Done'

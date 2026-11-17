@@ -14,6 +14,10 @@ accepted records before changing behaviour they cover.
 - Tasks sit in milestones and milestones in epics: a task's `Milestone` names a `MILE-n`, a
   milestone's `Epic` names an `EPIC-n`. A task's `Kind` is `feature`, `bug` or `chore`; a bug also
   needs `Severity`. `.urzua/config.yaml` declares all of this and RFC-3 gives the reasons.
+- Each acceptance check of a task ends with ` — evidence: code:<path>` (or `test:<path>`, or a
+  record's path) once it is met. The record check refuses a Done task with an item that cites
+  nothing. Evidence from a live run goes in `docs/evidence/<record>/` with session content removed
+  (ADR-8).
 - A feature gets a spec before code: the task that writes the spec comes first, and the tasks that
   build it depend on that task.
 - A feature never acts by default until a record cites replay evidence for it (ADR-3).
