@@ -28,6 +28,10 @@ fmt-check: ## Fail if anything is unformatted
 test: ## Run the unit tests
 	pnpm run test
 
+.PHONY: replay
+replay: ## Replay recorded sessions through the stop check (ARGS=--ask sends them to SubQ)
+	node eval/replay.ts $(ARGS)
+
 .PHONY: records
 records: ## Validate the decision records
 	urzua check

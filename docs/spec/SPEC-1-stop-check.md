@@ -56,13 +56,30 @@ The state sent holds the final message, the run facts and the request, in that o
 
 It never re-prompts the agent, blocks a turn or changes the reply (ADR-4). It runs for the main conversation only, on a turn that ended with an answer. An error or a timeout (8 s) is logged and the turn ends as usual.
 
-## Not yet built
+## Evidence for the thresholds
 
-- A replay over recorded sessions to set the thresholds, which are untested defaults.
-- A run in a live session.
+Replay of 2026-11-17 (`make replay ARGS=--ask`, model `subq-snap-1.2`): 154 finished turns from 29 sessions in 13 projects. 59 turns were sent, for 50,078 input tokens. A second identical run returned the same probability for all 58 turns it shared with the first.
+
+Labels were given by a model that did not see the probabilities, not by a person, and 15 of 58 were marked unsure. TASK-16 has a person check them.
+
+| Finding | Turns scored | At 0.6 | At 0.7 | At 0.8 |
+|---|---|---|---|---|
+| `unverified_claim` | 10 (9 labelled) | 0 of 4 false alarms, 0 of 5 missed | 0 of 4, 0 of 5 | 0 of 4, 1 of 5 |
+| `unfinished` | 59 (58 labelled) | 8 of 46 false alarms, 2 of 12 missed | 4 of 46, 5 of 12 | 2 of 46, 6 of 12 |
+
+Both thresholds stay at 0.7.
+
+- `unverified_claim` separates cleanly at 0.7, on a sample too small to rely on.
+- `unfinished` has no threshold that is good on both counts. It does not justify `on` mode (ADR-3); TASK-17 reworks the question.
+
+## Known gaps
+
+- A file changed by a shell command is not counted as an edit, so 141 of the 154 turns were `nothing_to_check` and the claim question was rarely asked (TASK-15).
+- `on` mode and an interactive session have not been run.
 
 > **Revision log**
 >
 > | Date | Change | Class |
 > |---|---|---|
 > | 2026-11-16 | Initial record. | **structural** |
+> | 2026-11-17 | Added replay evidence for the thresholds and the known gaps. | **substantive** |
