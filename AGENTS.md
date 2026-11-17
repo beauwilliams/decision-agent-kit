@@ -34,7 +34,7 @@ accepted records before changing behaviour they cover.
 | Path            | What it holds                                                        |
 | --------------- | -------------------------------------------------------------------- |
 | `src/core/`     | Transcript model, size estimation, redaction. No I/O.                |
-| `src/subq/`     | The SubQ Decisions API client.                                       |
+| `src/decision/` | The decisions API client and the provider table.                     |
 | `src/features/` | One folder per feature: a pure decision function and its policy.     |
 | `hooks/`        | The Claude Code adapter.                                             |
 | `eval/`         | Replay of recorded sessions through a feature.                       |

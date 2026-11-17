@@ -1,6 +1,6 @@
 import { createRedactor } from '../../core/redact.ts';
 import { abridge, type Message } from '../../core/transcript.ts';
-import type { Asker, Question } from '../../subq/client.ts';
+import type { Asker, Question } from '../../decision/client.ts';
 import {
   collectEvidence,
   ruleVerdict,

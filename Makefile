@@ -29,7 +29,7 @@ test: ## Run the unit tests
 	pnpm run test
 
 .PHONY: replay
-replay: ## Replay recorded sessions through the stop check (ARGS=--ask sends them to SubQ)
+replay: ## Replay recorded sessions through the stop check (ARGS=--ask sends them to the provider)
 	node eval/replay.ts $(ARGS)
 
 .PHONY: records

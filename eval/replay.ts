@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 import { checkStop } from '../src/features/stop-check/check.ts';
-import { createAsker, type Asker, type Fetch } from '../src/subq/client.ts';
+import { resolveProvider } from '../src/decision/providers.ts';
+import { createAsker, type Asker, type Fetch } from '../src/decision/client.ts';
 import { report, type Label, type Row } from './report.ts';
 import { parseSession } from './sessions.ts';
 
@@ -65,9 +66,12 @@ async function main(): Promise<void> {
   const out = option('out') ?? join('eval', 'out');
   const send = process.argv.includes('--ask');
   const limit = Number(option('excerpt') ?? DEFAULT_EXCERPT);
-  const apiKey = process.env.SUBQ_API_KEY ?? '';
-  if (send && apiKey === '') throw new Error('--ask needs SUBQ_API_KEY');
-  const ask = send ? createAsker({ apiKey, fetch: nodeFetch, sleep }) : notSent;
+  const provider = resolveProvider(option('provider'));
+  const apiKey = process.env[provider.keyVariable] ?? '';
+  if (send && apiKey === '') throw new Error(`--ask needs ${provider.keyVariable}`);
+  const ask = send
+    ? createAsker({ apiKey, fetch: nodeFetch, sleep, url: provider.url, model: provider.model })
+    : notSent;
 
   if (process.argv.includes('--report')) {
     const saved = readFileSync(join(out, 'replay.jsonl'), 'utf8')

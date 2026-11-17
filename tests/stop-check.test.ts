@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Message, ToolUse } from '../src/core/transcript.ts';
-import type { Asker, Question } from '../src/subq/client.ts';
+import type { Asker, Question } from '../src/decision/client.ts';
 import { checkStop } from '../src/features/stop-check/check.ts';
 import {
   collectEvidence,

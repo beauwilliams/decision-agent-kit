@@ -1,7 +1,7 @@
 {
   "name": "decision-agent-kit",
   "version": "0.1.0",
-  "description": "Decision-model checks for coding sessions, starting with a check that a finished turn is really finished. Uses SubQ Snap.",
+  "description": "Decision-model checks for coding sessions, starting with a check that a finished turn is really finished. Works with SubQ Snap, TypeSafe Jev and Levanto Sage.",
   "author": {
     "name": "Beau Williams"
   },
@@ -14,21 +14,28 @@
       "options": ["off", "shadow", "on"],
       "default": "shadow"
     },
+    "provider": {
+      "type": "string",
+      "title": "Decision model provider",
+      "description": "subq: SubQ Snap. jev: TypeSafe Jev. sage: Levanto Sage. Jev and Sage are configured from their documentation and have not been called from this repository yet.",
+      "options": ["subq", "jev", "sage"],
+      "default": "subq"
+    },
     "apiKey": {
       "type": "string",
-      "title": "SubQ API key",
-      "description": "Leave unset to use SUBQ_API_KEY or the key command.",
+      "title": "API key",
+      "description": "Leave unset to use the provider's variable (SUBQ_API_KEY, JEV_API_KEY or LEVANTO_API_KEY) or the key command.",
       "sensitive": true
     },
     "apiKeyCommand": {
       "type": "string",
       "title": "Key command",
-      "description": "A command that prints the SubQ API key, run without a shell when no key is set, such as a password manager's read command."
+      "description": "A command that prints the API key, run without a shell when no key is set, such as a password manager's read command."
     },
     "disabledPaths": {
       "type": "string",
       "title": "Disabled directories",
-      "description": "Comma-separated absolute paths. A session started under one sends nothing to SubQ."
+      "description": "Comma-separated absolute paths. A session started under one sends nothing to the provider."
     },
     "claimThreshold": {
       "type": "number",
@@ -44,9 +51,8 @@
     },
     "model": {
       "type": "string",
-      "title": "SubQ model",
-      "description": "The decision model ID. Thresholds are tuned against the default.",
-      "default": "subq-snap-1.2"
+      "title": "Model",
+      "description": "The decision model ID. Leave unset to use the provider's pinned model. Thresholds are tuned against SubQ Snap."
     }
   }
 }
