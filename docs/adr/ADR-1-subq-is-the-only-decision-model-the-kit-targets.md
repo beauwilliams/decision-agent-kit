@@ -1,6 +1,6 @@
 ---
 Stable-Id: 01M7KAGSPWTK5TWPAXPV24CAJX
-Status: Accepted
+Status: Superseded
 Date: 2026-11-16
 Author: beauwilliams
 Deciders: beauwilliams
@@ -39,3 +39,4 @@ The default model is the versioned ID `subq-snap-1.2`, not the `-latest` alias, 
 > | Date | Change | Class |
 > |---|---|---|
 > | 2026-11-16 | Initial record. | **structural** |
+> | 2026-11-17 | Superseded by ADR-7, which adds two providers. | **structural** |
