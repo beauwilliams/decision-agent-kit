@@ -106,7 +106,7 @@ With no key the kit does nothing harmful: the check is skipped and the ledger sa
 - `shadow` records and shows nothing. `on` shows a note under a reply the check flags. Neither can
   block the agent or make it continue.
 - Sent to the provider for each checked turn: the final message, the request that started the turn,
-  and the test and build commands that were run. Text shaped like a credential is replaced first; a secret with no
+  the test and build commands that were run, and shell commands that wrote files. Text shaped like a credential is replaced first; a secret with no
   recognisable shape is not caught.
   File contents are not sent. An excerpt of the last test or build output is sent when the kit
   cannot tell whether it passed: always in Codex, and in Claude Code when the command was piped or

@@ -11,6 +11,7 @@ export type Row = {
   claimsSuccess?: number;
   statesUnfinished?: number;
   needsUser?: number;
+  changedCode?: number;
   toolCalls: number;
   filesEdited: number;
   checksRun: number;

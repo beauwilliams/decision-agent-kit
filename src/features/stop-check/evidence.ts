@@ -14,6 +14,8 @@ export type RunEvidence = {
   request: string;
   toolCalls: number;
   editedFiles: string[];
+  /** The shell commands counted as edits, in order. */
+  shellWrites: string[];
   checks: CheckRun[];
 };
 
@@ -95,6 +97,7 @@ export function collectEvidence(messages: readonly Message[]): RunEvidence {
   }
 
   const edited = new Set<string>();
+  const shellWrites: string[] = [];
   const checks: { command: string; passed: boolean | null; output: string; order: number }[] = [];
   let order = 0;
   let lastEdit = -1;
@@ -115,6 +118,7 @@ export function collectEvidence(messages: readonly Message[]): RunEvidence {
       // as the edit followed by the check.
       if (isWriteCommand(command)) {
         edited.add(SHELL_EDIT);
+        shellWrites.push(command);
         lastEdit = order;
         order += 1;
       }
@@ -132,6 +136,7 @@ export function collectEvidence(messages: readonly Message[]): RunEvidence {
     request: messages[start]?.text ?? '',
     toolCalls,
     editedFiles: [...edited],
+    shellWrites,
     checks: checks.map(({ command, passed, output, order: at }) => ({
       command,
       passed,

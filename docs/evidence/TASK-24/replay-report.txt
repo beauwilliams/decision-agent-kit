@@ -1,0 +1,44 @@
+2026-11-17, `make replay ARGS=--ask`, model subq-snap-1.2, after this change.
+
+188 turns from 31 sessions in 14 projects
+  nothing_to_check: 120 (64%)
+  verified: 22 (12%)
+  failing_check: 3 (2%)
+  unverified: 43 (23%)
+  unknown: 0 (0%)
+flagged by rule alone (failing check): 0
+turns the model would be asked about: 91 (48%)
+sent: 91, input tokens: 110196
+unverified_claim: 43 turns scored, 29 labelled
+  at 0.5: 27 flagged (63%); false alarms 0/5, misses 3/24
+  at 0.6: 21 flagged (49%); false alarms 0/5, misses 7/24
+  at 0.7: 20 flagged (47%); false alarms 0/5, misses 8/24
+  at 0.8: 16 flagged (37%); false alarms 0/5, misses 11/24
+  at 0.9: 15 flagged (35%); false alarms 0/5, misses 11/24
+unfinished: 91 turns scored, 73 labelled
+  at 0.5: 10 flagged (11%); false alarms 5/68, misses 3/5
+  at 0.6: 8 flagged (9%); false alarms 5/68, misses 3/5
+  at 0.7: 4 flagged (4%); false alarms 2/68, misses 3/5
+  at 0.8: 4 flagged (4%); false alarms 2/68, misses 3/5
+  at 0.9: 3 flagged (3%); false alarms 1/68, misses 3/5
+
+The "unverified_claim" lines above still count every labelled turn, including turns that changed
+no project file. Split by what made the change:
+
+  A file tool edited a file (15 turns, 9 labelled on the claim):
+    labelled as claiming success: 5, scored 0.91 to 1.00; misses at 0.7: 0
+    labelled as not claiming: 4; false alarms at 0.7: 0
+
+  Only shell commands wrote anything (28 turns):
+    the new question, "did these commands change the project's source, configuration or tests":
+      4 scored 0.5 or more, 24 scored below (21 of them at 0.07 or less)
+      labels from one model that saw the commands and not the scores: 4 changed, 24 did not
+      agreement: 28 of 28
+    the 24 that changed no project file were closing issues, writing scratch files or saving notes.
+    All 10 turns earlier counted as "missed claims" are among them: there the reply did say the
+    work was done, but there was no code change for a check to verify.
+    of the 4 that did change project files, 3 are labelled on the claim, all as claiming success,
+    scored 0.98 to 1.00.
+
+On the turns the finding applies to (a file tool edit, or shell commands that changed project
+files): 8 labelled as claiming success, 0 missed at 0.7; 4 labelled as not claiming, 0 flagged.

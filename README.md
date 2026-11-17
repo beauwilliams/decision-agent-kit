@@ -153,7 +153,8 @@ ends.
 ## What leaves the machine
 
 The stop check sends the chosen provider the final message of the turn, the request that started it, and the
-check commands that ran. Where it cannot tell whether the last check passed, it also sends an excerpt of that check's
+check commands that ran. When the only changes in a turn came from shell commands, it also sends up
+to 8 of those commands, to ask whether they changed project files. Where it cannot tell whether the last check passed, it also sends an excerpt of that check's
 output, up to 4,000 characters. That is every check in Codex, which reports no exit status, and in
 Claude Code any check run behind a pipe, `;`, `||` or a new line, where the exit status may not be
 the check's. Credential-shaped text is replaced before sending; a secret with no
