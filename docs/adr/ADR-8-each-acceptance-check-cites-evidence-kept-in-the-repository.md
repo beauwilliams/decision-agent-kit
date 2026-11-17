@@ -1,6 +1,6 @@
 ---
 Stable-Id: 01M7KRZQYVM5M396FN9W4VMR2X
-Status: Accepted
+Status: Proposed
 Date: 2026-11-17
 Author: beauwilliams
 Deciders: beauwilliams
