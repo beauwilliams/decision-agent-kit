@@ -29,6 +29,20 @@ each harness gets a thin adapter, and each model is a base address, a model name
 The plan is in [`docs/epic/`](docs/epic/), and what each check has been measured to do is in its
 spec.
 
+## Quick start
+
+Paste this into your coding agent (Claude Code or Codex):
+
+```text
+Set up decision-agent-kit for the harness you are running in. Read
+https://raw.githubusercontent.com/urzuahq/decision-agent-kit/main/skills/setup-decision-agent-kit/SKILL.md
+and follow it. Ask me before you touch an API key.
+```
+
+The agent installs the plugin, asks where your key lives, and shows you how to confirm a check was
+recorded. The same steps, by hand, are below. Once installed, the plugin carries that skill, so
+"set up decision-agent-kit" also works later.
+
 ## The stop check
 
 At the end of each turn the kit reads what the turn did, without a model:
@@ -71,12 +85,16 @@ which is the data thresholds are tuned from.
 
 ## Setup: Claude Code
 
-Function hooks are early access in Claude Code:
+Function hooks are early access in Claude Code, so they load only with a variable set:
 
 ```sh
+claude plugin marketplace add urzuahq/decision-agent-kit
+claude plugin install decision-agent-kit@decision-agent-kit
 export CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1
-claude --plugin-dir /path/to/decision-agent-kit
 ```
+
+The install has been run on Claude Code 2.1.323. The checks themselves have been run from a
+checkout (`claude --plugin-dir /path/to/decision-agent-kit`), not yet from a marketplace install.
 
 The `provider` option picks the decision model: `subq` (the default), `jev` or `sage`. Each
 provider is a URL, a pinned model and a key variable. The `model` option overrides the pinned model.
@@ -119,8 +137,8 @@ with a `skipped` reason, and the reason is printed on standard error.
 
 Codex reports a shell command's output with no exit code, so a test or build run after the last edit
 gives the verdict `unknown`, not `verified` or `failing_check` (TASK-19). For now only the
-model's questions about the final message can flag a turn. The plugin has been installed from a local checkout and run with
-`codex exec`; installing from GitHub and an interactive session are untested.
+model's questions about the final message can flag a turn. The plugin has been installed from GitHub, and run with `codex exec`
+from a local install; an interactive session is untested.
 
 Between events the turn's prompt and command output are kept in
 `<state directory>/turns/<session id>.jsonl`, readable by the owner only, and removed when the turn
