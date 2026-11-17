@@ -88,11 +88,17 @@ describe('the recorded Codex turn', () => {
       harness: 'codex',
       mode: 'shadow',
       provider: 'subq',
-      verdict: 'unknown',
+      verdict: 'verified',
       asked: true,
       facts: { filesEdited: 2 },
     });
     expect(existsSync(join(home, 'turns', `${SESSION}.jsonl`))).toBe(false);
+  });
+
+  it('records a failing check when the model reads the output as a failure', async () => {
+    const d = deps({ SUBQ_API_KEY: KEY }, answering({ check_failed: 0.9 }));
+    await feed(fixture, d);
+    expect(ledger()[0]).toMatchObject({ verdict: 'failing_check' });
   });
 
   it('keeps state under owner-only permissions', async () => {
@@ -139,7 +145,7 @@ describe('a check that cannot run', () => {
     await feed(fixture, d);
     expect(argv).toEqual(['pass', 'show', 'kit']);
     expect(requests).toEqual([`Bearer ${KEY}`]);
-    expect(ledger()[0]).toHaveProperty('verdict', 'unknown');
+    expect(ledger()[0]).toHaveProperty('verdict', 'verified');
   });
 
   it('records a timeout as skipped', async () => {

@@ -136,8 +136,9 @@ A check that could not run (no key, timeout, an error from the provider) is reco
 with a `skipped` reason, and the reason is printed on standard error.
 
 Codex reports a shell command's output with no exit code, so a test or build run after the last edit
-gives the verdict `unknown`, not `verified` or `failing_check` (TASK-19). For now only the
-model's questions about the final message can flag a turn. The plugin has been installed from GitHub, and run with `codex exec`
+has no outcome the kit can read. The decision model is asked whether the check's output shows a
+failure, and the verdict becomes `failing_check`, `verified`, or stays `unknown` when the answer is
+in between. The plugin has been installed from GitHub, and run with `codex exec`
 from a local install; an interactive session is untested.
 
 Between events the turn's prompt and command output are kept in
@@ -147,7 +148,8 @@ ends.
 ## What leaves the machine
 
 The stop check sends the chosen provider the final message of the turn, the request that started it, and the
-check commands that ran. Credential-shaped text is replaced before sending; a secret with no
+check commands that ran. Where the harness does not say whether a check passed (Codex), it also
+sends an excerpt of the last check's output, up to 4,000 characters. Credential-shaped text is replaced before sending; a secret with no
 recognisable shape is not caught. List a directory in `disabledPaths` and sessions started under it
 send nothing. The ledger records which provider and model each decision used.
 
