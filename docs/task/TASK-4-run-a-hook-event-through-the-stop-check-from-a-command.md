@@ -1,6 +1,6 @@
 ---
 Stable-Id: 01M7KN14CK6DHF8BJEQAMQMQ5F
-Status: Open
+Status: InProgress
 Date: 2026-11-17
 Author: beauwilliams
 Kind: feature
@@ -21,7 +21,7 @@ A command reads a hook event on standard input, runs the stop check and writes a
 
 ## Plan
 
-- [ ] Decide how the command is run with no build step (ADR-2).
+- [x] Decide how the command is run with no build step (ADR-10).
 - [ ] Map the event to the transcript model.
 - [ ] Supply fetch, sleep and file access from Node.
 

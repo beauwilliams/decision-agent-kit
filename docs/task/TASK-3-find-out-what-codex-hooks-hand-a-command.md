@@ -14,7 +14,7 @@ We know which features can reach Codex, which decides the command-line adapter p
 
 ## Acceptance checks
 
-- A list of the hook events Codex 0.167.2 raises, with what each passes to the command — evidence: code:docs/evidence/TASK-3/events.txt, code:docs/evidence/TASK-3/hook-inputs.json
+- A list of the hook events Codex 0.167.2 raises, with what each passes to the command — evidence: code:docs/evidence/TASK-3/events.txt, code:docs/evidence/TASK-3/hook-inputs.json, code:docs/evidence/TASK-3/edit-and-check.json
 - Where Codex keeps a session transcript and in what format — evidence: code:docs/evidence/TASK-3/session-file.txt
 - Whether a hook can show the person a note
 
@@ -23,7 +23,7 @@ We know which features can reach Codex, which decides the command-line adapter p
 - [x] Read the hook input and output schemas in the Codex binary.
 - [x] Add a logging hook for each event and run a short session.
 - [ ] Run an interactive session to see whether a Stop hook's `systemMessage` is shown.
-- [ ] Capture a file edit, which the test environment's sandbox prevented.
+- [x] Capture a file edit, with Codex's own sandbox off inside the scratch project.
 
 ## Evidence
 
@@ -33,4 +33,6 @@ We know which features can reach Codex, which decides the command-line adapter p
 - Stop carries `last_assistant_message`, `turn_id`, `session_id`, `cwd` and `transcript_path`. UserPromptSubmit carries the prompt. PreToolUse and PostToolUse carry `tool_name`, `tool_input.command` and the response.
 - That is everything the stop check needs without reading the session file: the request, the commands run and their results, and the final message. The command-line adapter (MILE-5) can collect them from the hooks as they fire.
 - The session file is JSON lines and holds a shell command inside a string of code, so the hooks are the easier source.
+- A second session with the sandbox off reached an edit and a failing test (docs/evidence/TASK-3/edit-and-check.json). An edit arrives as tool `apply_patch` with the patch text in `tool_input.command`; the files are named on its `*** Add File:`, `*** Update File:` and `*** Delete File:` lines.
+- A shell command's result is its output only. Neither the hook nor the session file says whether it exited with an error, so a failing test and a passing one differ only in their text (TASK-19).
 - A Stop hook's `systemMessage` did not appear in `codex exec` output. The third check stays open until an interactive session is tried.
