@@ -1,0 +1,42 @@
+name: plugin loads
+
+# Installs the plugin from the checkout into a scratch profile for each harness.
+# Versions are pinned, so a harness release breaks this on the commit that
+# bumps the pin and not on an unrelated pull request.
+on:
+  pull_request:
+    paths:
+      - .claude-plugin/**
+      - .codex-plugin/**
+      - cli/**
+      - hooks/**
+      - skills/**
+      - src/**
+      - package.json
+      - scripts/plugin-load-check.sh
+      - .github/workflows/plugin-load.yml
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: plugin-load-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CLAUDE_CODE_VERSION: 2.1.323
+  CODEX_VERSION: 0.167.2
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - run: npm install -g "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION" "@openai/codex@$CODEX_VERSION"
+      - run: make plugin-load
