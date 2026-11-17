@@ -11,6 +11,11 @@ accepted records before changing behaviour they cover.
 - A change in direction gets a record first: `urzua new adr "<the decision as a sentence>"`. Never
   number a record by hand. `make records` must stay clean.
 - Work is a task: `urzua new task "<the outcome>"`. Write its acceptance checks before code, add a step to its plan before starting it, and record evidence with the commit it ran against. `urzua roadmap` gives the order of work.
+- Tasks sit in milestones and milestones in epics: a task's `Milestone` names a `MILE-n`, a
+  milestone's `Epic` names an `EPIC-n`. A task's `Kind` is `feature`, `bug` or `chore`; a bug also
+  needs `Severity`. `.urzua/config.yaml` declares all of this and RFC-3 gives the reasons.
+- A feature gets a spec before code: the task that writes the spec comes first, and the tasks that
+  build it depend on that task.
 - A feature never acts by default until a record cites replay evidence for it (ADR-3).
 - A model answer may make the agent more cautious and never less (ADR-4).
 - Nothing under `src/` or `hooks/` uses a Node built-in, a global `fetch` or a timer (ADR-2). The
@@ -21,12 +26,12 @@ accepted records before changing behaviour they cover.
 
 ## Layout
 
-| Path            | What it holds                                                    |
-| --------------- | ---------------------------------------------------------------- |
-| `src/core/`     | Transcript model, size estimation, redaction. No I/O.            |
-| `src/subq/`     | The SubQ Decisions API client.                                   |
-| `src/features/` | One folder per feature: a pure decision function and its policy. |
-| `hooks/`        | The Claude Code adapter.                                         |
-| `eval/`         | Replay of recorded sessions through a feature.                   |
-| `tests/`        | Unit tests.                                                      |
-| `docs/adr/`     | Decision records.                                                |
+| Path            | What it holds                                                        |
+| --------------- | -------------------------------------------------------------------- |
+| `src/core/`     | Transcript model, size estimation, redaction. No I/O.                |
+| `src/subq/`     | The SubQ Decisions API client.                                       |
+| `src/features/` | One folder per feature: a pure decision function and its policy.     |
+| `hooks/`        | The Claude Code adapter.                                             |
+| `eval/`         | Replay of recorded sessions through a feature.                       |
+| `tests/`        | Unit tests.                                                          |
+| `docs/`         | Records, one folder per type: adr, rfc, spec, epic, milestone, task. |
