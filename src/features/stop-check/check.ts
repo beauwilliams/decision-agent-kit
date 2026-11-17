@@ -1,10 +1,12 @@
 import { createRedactor } from '../../core/redact.ts';
 import { abridge, type Message } from '../../core/transcript.ts';
 import type { Asker, Question } from '../../decision/client.ts';
+import { CHECK_FAILED, outcomeState } from './outcome.ts';
 import {
   collectEvidence,
   ruleVerdict,
   SHELL_EDIT,
+  type CheckRun,
   type RunEvidence,
   type Verdict,
 } from './evidence.ts';
@@ -25,6 +27,10 @@ export type StopCheckOptions = {
   waitingThreshold: number;
   /** A turn with no edits is asked about only when it made at least this many tool calls. */
   minToolCalls: number;
+  /** Probability at or above which a check with no reported outcome is taken to have failed. */
+  checkFailedThreshold: number;
+  /** Probability at or below which a check with no reported outcome is taken to have passed. */
+  checkPassedThreshold: number;
 };
 
 export const DEFAULT_STOP_CHECK_OPTIONS: StopCheckOptions = {
@@ -32,13 +38,20 @@ export const DEFAULT_STOP_CHECK_OPTIONS: StopCheckOptions = {
   unfinishedThreshold: 0.7,
   waitingThreshold: 0.5,
   minToolCalls: 3,
+  checkFailedThreshold: 0.7,
+  checkPassedThreshold: 0.3,
 };
 
 export type StopCheckResult = {
   verdict: Verdict;
   findings: StopFinding[];
   asked: boolean;
-  probabilities: { claimsSuccess?: number; statesUnfinished?: number; needsUser?: number };
+  probabilities: {
+    claimsSuccess?: number;
+    statesUnfinished?: number;
+    needsUser?: number;
+    checkFailed?: number;
+  };
   facts: { toolCalls: number; filesEdited: number; checksRun: number; checksAfterLastEdit: number };
   inputTokens: number;
   redactions: number;
@@ -102,6 +115,7 @@ export function buildState(
   evidence: RunEvidence,
   answer: string,
   redact: (text: string) => string,
+  outcome?: { check_output: string; check_command: string },
 ): unknown {
   return {
     final_message: redact(abridge(answer, ANSWER_CHARS)),
@@ -114,6 +128,7 @@ export function buildState(
         after_last_edit: check.afterLastEdit,
       })),
     },
+    ...outcome,
     user_request: redact(abridge(evidence.request, REQUEST_CHARS)),
   };
 }
@@ -170,7 +185,15 @@ export async function checkStop(
   };
   if (verdict === 'unverified') questions.claims_success = QUESTIONS.claims_success;
 
-  const asked = await ask(buildState(evidence, answer, redact), questions);
+  let outcome: ReturnType<typeof outcomeState> | undefined;
+  let newest: CheckRun | undefined;
+  if (verdict === 'unknown') {
+    questions.check_failed = CHECK_FAILED;
+    newest = evidence.checks.filter((check) => check.afterLastEdit).at(-1);
+    if (newest) outcome = outcomeState(newest.command, newest.output, redact);
+  }
+
+  const asked = await ask(buildState(evidence, answer, redact, outcome), questions);
   result.asked = true;
   result.inputTokens = asked.inputTokens;
   result.redactions = redact.count;
@@ -181,6 +204,23 @@ export async function checkStop(
   if (claims !== undefined) result.probabilities.claimsSuccess = claims;
   if (unfinished !== undefined) result.probabilities.statesUnfinished = unfinished;
   if (needsUser !== undefined) result.probabilities.needsUser = needsUser;
+
+  const checkFailed = probability(asked.answers.check_failed?.noul);
+  if (checkFailed !== undefined) result.probabilities.checkFailed = checkFailed;
+  if (verdict === 'unknown' && checkFailed !== undefined) {
+    if (checkFailed >= options.checkFailedThreshold) {
+      result.verdict = 'failing_check';
+      findings.push({
+        code: 'failing_check',
+        source: 'model',
+        probability: checkFailed,
+        message: `the last check looks like it failed: ${redact(command(newest?.command ?? ''))}`,
+      });
+    } else if (checkFailed <= options.checkPassedThreshold) {
+      result.verdict = 'verified';
+    }
+  }
+  result.redactions = redact.count;
 
   if (claims !== undefined && claims >= options.claimThreshold) {
     findings.push({

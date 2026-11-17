@@ -1,0 +1,31 @@
+2026-11-17, `node eval/check-outcome.ts --ask`, model subq-snap-1.2.
+
+Sample: 94 shell commands from recorded Claude Code sessions that ran a test, build, lint or
+type-check and have a recorded exit status. Each was sent as the command and an excerpt of its
+output, with the exit status withheld.
+
+Labels: one model read each command and output without the exit status or the probabilities and
+labelled 24 as failed and 70 as passed (5 marked unsure). No person has checked the labels.
+
+Exit status against the labels:
+  exited with an error: 2 of 94
+  labelled failed but exited cleanly: 23 of 24
+  (the output was piped through tail, grep or head, or followed by another command)
+
+The question against the labels:
+  failed at >= 0.7, passed at <= 0.3: 92 of 94 decided
+    called failed: 25, of which labelled passed: 3
+    called passed: 67, of which labelled failed: 1
+    left unknown: 2
+  failed at >= 0.8, passed at <= 0.2: 89 decided; 3 of 23 and 1 of 66 wrong; 5 unknown
+  failed at >= 0.9, passed at <= 0.1: 82 decided; 2 of 18 and 0 of 64 wrong; 12 unknown
+
+The four disagreements at 0.7 / 0.3:
+  0.97, labelled passed (unsure): an install step errored and the build after it succeeded
+  0.94, labelled passed: the output was file contents; no check ran
+  0.88, labelled passed: a search printed validator notes; the check's own marker was 0
+  0.10, labelled failed: the only sign of failure was a printed exit marker of 2
+
+Live, Codex 0.167.2 (live-entries.jsonl): a turn ending on a failing `node --test` scored 1.00 and
+was recorded as failing_check; a turn ending on a passing one scored 0.00 and was recorded as
+verified.

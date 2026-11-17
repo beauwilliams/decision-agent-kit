@@ -5,6 +5,8 @@ export type CheckRun = {
   /** `null` when the harness reports no outcome for the command. */
   passed: boolean | null;
   afterLastEdit: boolean;
+  /** The text the command printed; empty when the transcript has none. */
+  output: string;
 };
 
 /** What the last turn did, read from the transcript with no model involved. */
@@ -74,13 +76,13 @@ function turnStart(messages: readonly Message[]): number {
  */
 export function collectEvidence(messages: readonly Message[]): RunEvidence {
   const start = turnStart(messages);
-  const errors = new Map<string, boolean>();
+  const results = new Map<string, { isError: boolean; text: string }>();
   for (const message of messages.slice(start)) {
-    for (const result of message.toolResults ?? []) errors.set(result.tool_use_id, result.isError);
+    for (const result of message.toolResults ?? []) results.set(result.tool_use_id, result);
   }
 
   const edited = new Set<string>();
-  const checks: { command: string; passed: boolean | null; order: number }[] = [];
+  const checks: { command: string; passed: boolean | null; output: string; order: number }[] = [];
   let order = 0;
   let lastEdit = -1;
   let toolCalls = 0;
@@ -104,8 +106,10 @@ export function collectEvidence(messages: readonly Message[]): RunEvidence {
         order += 1;
       }
       if (isCheckCommand(command)) {
-        const isError = errors.get(use.tool_use_id) ?? use.isError ?? false;
-        checks.push({ command, passed: use.outcomeUnknown ? null : !isError, order });
+        const result = results.get(use.tool_use_id);
+        const isError = result?.isError ?? use.isError ?? false;
+        const output = result?.text ?? use.text ?? '';
+        checks.push({ command, passed: use.outcomeUnknown ? null : !isError, output, order });
       }
     }
   }
@@ -114,9 +118,10 @@ export function collectEvidence(messages: readonly Message[]): RunEvidence {
     request: messages[start]?.text ?? '',
     toolCalls,
     editedFiles: [...edited],
-    checks: checks.map(({ command, passed, order: at }) => ({
+    checks: checks.map(({ command, passed, output, order: at }) => ({
       command,
       passed,
+      output,
       afterLastEdit: at > lastEdit,
     })),
   };

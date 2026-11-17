@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Message, ToolUse } from '../src/core/transcript.ts';
 import type { Asker, Question } from '../src/decision/client.ts';
 import { checkStop } from '../src/features/stop-check/check.ts';
+import { outputExcerpt } from '../src/features/stop-check/outcome.ts';
 import {
   collectEvidence,
   isCheckCommand,
@@ -12,16 +13,28 @@ import {
 
 let nextId = 0;
 
-function call(tool: string, input: Record<string, unknown>, failed = false): Message[] {
+function call(
+  tool: string,
+  input: Record<string, unknown>,
+  failed = false,
+  options: { outcomeUnknown?: true; text?: string } = {},
+): Message[] {
   const id = `t${++nextId}`;
-  const use: ToolUse = { tool_use_id: id, tool, input };
+  const use: ToolUse = {
+    tool_use_id: id,
+    tool,
+    input,
+    ...(options.outcomeUnknown ? { outcomeUnknown: true } : {}),
+  };
   return [
     { role: 'assistant', text: '', toolUses: [use] },
     {
       role: 'user',
       text: '',
       toolUses: [],
-      toolResults: [{ tool_use_id: id, text: failed ? 'exit 1' : 'ok', isError: failed }],
+      toolResults: [
+        { tool_use_id: id, text: options.text ?? (failed ? 'exit 1' : 'ok'), isError: failed },
+      ],
     },
   ];
 }
@@ -91,8 +104,8 @@ describe('collectEvidence', () => {
     expect(evidence.request).toBe('fix the parser');
     expect(evidence.editedFiles).toEqual(['parser.ts']);
     expect(evidence.checks).toEqual([
-      { command: 'pnpm test', passed: false, afterLastEdit: false },
-      { command: 'pnpm test', passed: true, afterLastEdit: true },
+      { command: 'pnpm test', passed: false, afterLastEdit: false, output: 'exit 1' },
+      { command: 'pnpm test', passed: true, afterLastEdit: true, output: 'ok' },
     ]);
   });
 });
@@ -275,7 +288,7 @@ describe('a check with no reported outcome', () => {
   it('has passed null and the verdict unknown', () => {
     const evidence = collectEvidence(afterEdit());
     expect(evidence.checks).toEqual([
-      { command: 'node --test', passed: null, afterLastEdit: true },
+      { command: 'node --test', passed: null, afterLastEdit: true, output: 'output' },
     ]);
     expect(ruleVerdict(evidence)).toBe('unknown');
   });
@@ -288,12 +301,16 @@ describe('a check with no reported outcome', () => {
     ).toBe('unverified');
   });
 
-  it('asks only the unfinished and waiting questions and raises no rule finding', async () => {
-    const ask = asker({ states_unfinished: 0.1 });
+  it('asks whether the check failed, not whether the reply claims success', async () => {
+    const ask = asker({ check_failed: 0.5 });
     const result = await checkStop(afterEdit(), 'done', ask);
     expect(result.verdict).toBe('unknown');
     expect(result.findings).toEqual([]);
-    expect(Object.keys(ask.asked[0] ?? {}).sort()).toEqual(['needs_user', 'states_unfinished']);
+    expect(Object.keys(ask.asked[0] ?? {}).sort()).toEqual([
+      'check_failed',
+      'needs_user',
+      'states_unfinished',
+    ]);
   });
 
   it('passes null through to the model state', async () => {
@@ -304,5 +321,133 @@ describe('a check with no reported outcome', () => {
     };
     await checkStop(afterEdit(), 'done', ask);
     expect(state?.run_facts.checks_run[0]?.passed).toBeNull();
+  });
+});
+
+describe('settling an unknown outcome from the check output', () => {
+  const unknownTurn = (text = 'FAIL 2 tests') =>
+    turn(
+      call('Edit', { file_path: 'a.ts' }),
+      call('Bash', { command: 'node --test' }, false, { outcomeUnknown: true, text }),
+    );
+
+  it('flags a failing check when the model reads the output as a failure', async () => {
+    const ask = asker({ check_failed: 0.95 });
+    const result = await checkStop(unknownTurn(), 'All done.', ask);
+    expect(result.verdict).toBe('failing_check');
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({
+      code: 'failing_check',
+      source: 'model',
+      probability: 0.95,
+    });
+    expect(result.findings[0]?.message).toContain('node --test');
+    expect(result.probabilities.checkFailed).toBe(0.95);
+    expect(Object.keys(ask.asked[0] ?? {})).toContain('check_failed');
+    expect(Object.keys(ask.asked[0] ?? {})).not.toContain('claims_success');
+  });
+
+  it('is verified when the model reads the output as a pass', async () => {
+    const result = await checkStop(unknownTurn('ok'), 'All done.', asker({ check_failed: 0.05 }));
+    expect(result.verdict).toBe('verified');
+    expect(result.findings).toEqual([]);
+  });
+
+  it('stays unknown between the thresholds', async () => {
+    const result = await checkStop(unknownTurn(), 'All done.', asker({ check_failed: 0.5 }));
+    expect(result.verdict).toBe('unknown');
+    expect(result.findings).toEqual([]);
+  });
+
+  it('stays unknown when the answer is missing', async () => {
+    const ask: Asker = async () => ({ answers: {}, inputTokens: 0, requests: 1 });
+    const result = await checkStop(unknownTurn(), 'All done.', ask);
+    expect(result.verdict).toBe('unknown');
+    expect(result.findings).toEqual([]);
+  });
+
+  it('still reports unfinished work alongside the outcome', async () => {
+    const result = await checkStop(
+      unknownTurn(),
+      'Half done.',
+      asker({ check_failed: 0.95, states_unfinished: 0.9 }),
+    );
+    expect(result.findings.map((finding) => finding.code)).toEqual(['failing_check', 'unfinished']);
+  });
+
+  async function stateFor(messages: Message[]): Promise<Record<string, unknown>> {
+    let state: Record<string, unknown> = {};
+    const ask: Asker = async (given) => {
+      state = given as Record<string, unknown>;
+      return { answers: {}, inputTokens: 0, requests: 1 };
+    };
+    await checkStop(messages, 'done', ask);
+    return state;
+  }
+
+  it('sends the output and command, between run_facts and user_request', async () => {
+    const state = await stateFor(unknownTurn('3 failed, 10 passed'));
+    expect(state.check_output).toBe('3 failed, 10 passed');
+    expect(state.check_command).toBe('node --test');
+    expect(Object.keys(state)).toEqual([
+      'final_message',
+      'run_facts',
+      'check_output',
+      'check_command',
+      'user_request',
+    ]);
+  });
+
+  it('sends no output for an unverified turn or a known outcome', async () => {
+    expect(await stateFor(turn(call('Edit', { file_path: 'a.ts' })))).not.toHaveProperty(
+      'check_output',
+    );
+    expect(
+      await stateFor(
+        turn(call('Edit', { file_path: 'a.ts' }), call('Bash', { command: 'pnpm test' })),
+      ),
+    ).not.toHaveProperty('check_output');
+  });
+
+  it('redacts credentials in the output', async () => {
+    const state = await stateFor(
+      unknownTurn('using key sk-abcdefghijklmnopqrstuvwxyz012345 failed'),
+    );
+    expect(JSON.stringify(state)).not.toContain('abcdefghijklmnopqrstuvwxyz012345');
+  });
+});
+
+describe('evidence output', () => {
+  it('carries each check output, falling back to the tool use text', () => {
+    const id = 'direct';
+    const messages: Message[] = [
+      ...turn(call('Bash', { command: 'pnpm test' }, false, { text: 'first run' })),
+      {
+        role: 'assistant',
+        text: '',
+        toolUses: [
+          { tool_use_id: id, tool: 'Bash', input: { command: 'pnpm lint' }, text: 'inline' },
+        ],
+      },
+    ];
+    expect(collectEvidence(messages).checks.map((check) => check.output)).toEqual([
+      'first run',
+      'inline',
+    ]);
+  });
+});
+
+describe('outputExcerpt', () => {
+  it('leaves short text unchanged', () => {
+    expect(outputExcerpt('short', 100)).toBe('short');
+  });
+
+  it('keeps the start and the end of long text within the limit plus the note', () => {
+    const text = `START${'x'.repeat(5000)}END`;
+    const excerpt = outputExcerpt(text, 400);
+    expect(excerpt.startsWith('START')).toBe(true);
+    expect(excerpt.endsWith('END')).toBe(true);
+    expect(excerpt).toContain('chars omitted');
+    expect(excerpt.length).toBeLessThanOrEqual(400 + 40);
   });
 });
