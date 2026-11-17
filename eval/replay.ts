@@ -117,6 +117,9 @@ async function main(): Promise<void> {
       if (result.probabilities.statesUnfinished !== undefined) {
         row.statesUnfinished = result.probabilities.statesUnfinished;
       }
+      if (result.probabilities.changedCode !== undefined) {
+        row.changedCode = result.probabilities.changedCode;
+      }
       if (result.probabilities.needsUser !== undefined) {
         row.needsUser = result.probabilities.needsUser;
       }

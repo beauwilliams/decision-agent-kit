@@ -63,6 +63,7 @@ export function resolveConfig(options: PluginOptions): Config {
         DEFAULT_STOP_CHECK_OPTIONS.waitingThreshold,
       ),
       minToolCalls: DEFAULT_STOP_CHECK_OPTIONS.minToolCalls,
+      codeChangeThreshold: DEFAULT_STOP_CHECK_OPTIONS.codeChangeThreshold,
       checkFailedThreshold: DEFAULT_STOP_CHECK_OPTIONS.checkFailedThreshold,
       checkPassedThreshold: DEFAULT_STOP_CHECK_OPTIONS.checkPassedThreshold,
     },

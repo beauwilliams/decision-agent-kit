@@ -487,3 +487,40 @@ describe("an exit status that may not be the check's", () => {
     expect(ruleVerdict(collectEvidence(passed))).toBe('verified');
   });
 });
+
+describe('a turn whose only edits came from shell commands', () => {
+  const messages = turn(call('Bash', { command: 'gh issue close 12 > /tmp/out.txt' }));
+
+  it('asks whether project files changed and sends the commands', async () => {
+    const ask = asker({ claims_success: 0.9, changed_code: 0.9 });
+    const result = await checkStop(messages, 'Closed it; all working.', ask);
+    expect(Object.keys(ask.asked[0] ?? {})).toContain('changed_code');
+    expect(result.probabilities.changedCode).toBe(0.9);
+    expect(result.findings.map((finding) => finding.code)).toEqual(['unverified_claim']);
+  });
+
+  it('drops the claim finding when no project file changed', async () => {
+    const result = await checkStop(
+      messages,
+      'Closed it; all working.',
+      asker({ claims_success: 0.9, changed_code: 0.1 }),
+    );
+    expect(result.findings).toEqual([]);
+  });
+
+  it('keeps the claim finding when the answer is missing', async () => {
+    const onlyClaims: Asker = async () => ({
+      answers: { claims_success: { type: 'noul', noul: 0.9 } },
+      inputTokens: 0,
+      requests: 1,
+    });
+    const result = await checkStop(messages, 'Closed it; all working.', onlyClaims);
+    expect(result.findings.map((finding) => finding.code)).toEqual(['unverified_claim']);
+  });
+
+  it('does not ask when a file tool made an edit', async () => {
+    const ask = asker({ claims_success: 0.9 });
+    await checkStop(turn(call('Edit', { file_path: 'a.ts' })), 'Done, works.', ask);
+    expect(Object.keys(ask.asked[0] ?? {})).not.toContain('changed_code');
+  });
+});

@@ -27,6 +27,8 @@ export type StopCheckOptions = {
   waitingThreshold: number;
   /** A turn with no edits is asked about only when it made at least this many tool calls. */
   minToolCalls: number;
+  /** Below this, a turn whose only edits came from shell commands is taken not to have changed project files. */
+  codeChangeThreshold: number;
   /** Probability at or above which a check with no reported outcome is taken to have failed. */
   checkFailedThreshold: number;
   /** Probability at or below which a check with no reported outcome is taken to have passed. */
@@ -38,6 +40,7 @@ export const DEFAULT_STOP_CHECK_OPTIONS: StopCheckOptions = {
   unfinishedThreshold: 0.7,
   waitingThreshold: 0.5,
   minToolCalls: 3,
+  codeChangeThreshold: 0.5,
   checkFailedThreshold: 0.7,
   checkPassedThreshold: 0.3,
 };
@@ -51,6 +54,7 @@ export type StopCheckResult = {
     statesUnfinished?: number;
     needsUser?: number;
     checkFailed?: number;
+    changedCode?: number;
   };
   facts: { toolCalls: number; filesEdited: number; checksRun: number; checksAfterLastEdit: number };
   inputTokens: number;
@@ -60,6 +64,20 @@ export type StopCheckResult = {
 const ANSWER_CHARS = 6000;
 const REQUEST_CHARS = 3000;
 const COMMAND_CHARS = 200;
+
+const SHELL_COMMANDS = 8;
+const SHELL_COMMAND_CHARS = 300;
+
+const CHANGED_CODE: Question = {
+  type: 'noul',
+  instructions:
+    "Did the commands in `shell_commands` change the project's source code, configuration or tests?",
+  criteria: {
+    true: 'At least one command edits, creates, moves or deletes a file that is part of the project being worked on',
+    false:
+      'They only write scratch or temporary files, notes, or act on something outside the project such as an issue tracker, a remote service or the home directory',
+  },
+};
 
 const QUESTIONS: Record<'claims_success' | 'states_unfinished' | 'needs_user', Question> = {
   claims_success: {
@@ -116,6 +134,7 @@ export function buildState(
   answer: string,
   redact: (text: string) => string,
   outcome?: { check_output: string; check_command: string },
+  shellCommands?: string[],
 ): unknown {
   return {
     final_message: redact(abridge(answer, ANSWER_CHARS)),
@@ -129,6 +148,7 @@ export function buildState(
       })),
     },
     ...outcome,
+    ...(shellCommands ? { shell_commands: shellCommands } : {}),
     user_request: redact(abridge(evidence.request, REQUEST_CHARS)),
   };
 }
@@ -193,7 +213,17 @@ export async function checkStop(
     if (newest) outcome = outcomeState(newest.command, newest.output, redact);
   }
 
-  const asked = await ask(buildState(evidence, answer, redact, outcome), questions);
+  const shellOnly =
+    verdict === 'unverified' && evidence.editedFiles.every((path) => path === SHELL_EDIT);
+  let shellCommands: string[] | undefined;
+  if (shellOnly) {
+    questions.changed_code = CHANGED_CODE;
+    shellCommands = evidence.shellWrites
+      .slice(-SHELL_COMMANDS)
+      .map((text) => redact(abridge(text.replace(/\s+/g, ' ').trim(), SHELL_COMMAND_CHARS)));
+  }
+
+  const asked = await ask(buildState(evidence, answer, redact, outcome, shellCommands), questions);
   result.asked = true;
   result.inputTokens = asked.inputTokens;
   result.redactions = redact.count;
@@ -222,7 +252,13 @@ export async function checkStop(
   }
   result.redactions = redact.count;
 
-  if (claims !== undefined && claims >= options.claimThreshold) {
+  const changedCode = probability(asked.answers.changed_code?.noul);
+  if (changedCode !== undefined) result.probabilities.changedCode = changedCode;
+  // An unanswered changed_code clears nothing: only a clear "no project file changed" does.
+  const noCodeChange =
+    shellOnly && changedCode !== undefined && changedCode < options.codeChangeThreshold;
+
+  if (claims !== undefined && claims >= options.claimThreshold && !noCodeChange) {
     findings.push({
       code: 'unverified_claim',
       source: 'model',

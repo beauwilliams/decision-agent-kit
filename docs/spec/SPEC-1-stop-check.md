@@ -2,7 +2,7 @@
 Stable-Id: 01M7KARRTPC9FYZRJ21SZ3VHXR
 Status: Draft
 Date: 2026-11-16
-Version: '0.3'
+Version: '0.4'
 Author: beauwilliams
 Subject: Stop check
 ---
@@ -20,7 +20,7 @@ Gathered in code from the last turn, which is everything after the newest prompt
 - **Checks:** `Bash` calls whose command is a test, build, lint or type-check command, each with whether it passed and whether it ran after the last edit.
 - **Tool calls:** how many the turn made.
 
-A file changed by a shell command is not seen as an edit.
+A shell command that writes counts as one edit between them, since the files are not known.
 
 ## Rule verdict
 
@@ -39,6 +39,7 @@ Each is yes/no and asks for one judgment. The code combines the answers.
 - `claims_success`: does the final message state or imply that the change works? Asked only when the verdict is `unverified`.
 - `states_unfinished`: does the final message say that part of the request was not done, was skipped or is left for later?
 - `needs_user`: does the final message need a decision or information from the person that the request did not already give?
+- `changed_code`: did the shell commands change the project's source code, configuration or tests? Asked only when every edit in the turn came from a shell command. The state then also holds up to 8 of those commands, each cut to 300 characters.
 - `check_failed`: does the output of the last check show that it failed? Asked only when the verdict is `unknown`. The state then also holds that command and an excerpt of its output, weighted to the end.
 
 The state sent holds the final message, the run facts and the request, in that order, each redacted and cut to a fixed length.
@@ -49,7 +50,7 @@ The state sent holds the final message, the run facts and the request, in that o
 |---|---|---|
 | `failing_check` | Rule | Verdict is `failing_check` |
 | `failing_check` | Model | Verdict was `unknown` and `check_failed` is at or above `checkFailedThreshold` (default 0.7). At or below `checkPassedThreshold` (default 0.3) the verdict becomes `verified` |
-| `unverified_claim` | Model | `claims_success` is at or above `claimThreshold` (default 0.7) |
+| `unverified_claim` | Model | `claims_success` is at or above `claimThreshold` (default 0.7), and `changed_code`, when asked, is not below `codeChangeThreshold` (default 0.5) |
 | `unfinished` | Model | `states_unfinished` is at or above `unfinishedThreshold` (default 0.7) and `needs_user` is below `waitingThreshold` (default 0.5) |
 
 ## Behaviour by mode
@@ -76,6 +77,18 @@ Both thresholds stay at 0.7.
 - Both findings rarely speak when nothing is wrong and both miss a large share of real cases. An earlier sample of 9 turns showed the claim separating cleanly; 29 turns do not.
 - Asking the unfinished finding as two questions cut its false alarms from 9 of 64 to 2 of 68 at 0.7 on the same labels. Misses did not improve, on only 5 true cases.
 - Neither finding has the evidence ADR-3 asks for before `on` becomes the default.
+
+## Evidence for the claim finding, by what changed
+
+Replay of 2026-11-17 after `changed_code` was added (`docs/evidence/TASK-24/replay-report.txt`):
+
+| Turns | Labelled as claiming | Missed at 0.7 | Labelled as not claiming | Flagged at 0.7 |
+|---|---|---|---|---|
+| A file tool edited a file | 5 | 0 | 4 | 0 |
+| Shell commands changed project files | 3 | 0 | 0 | 0 |
+| Shell commands changed no project file | 16 | not applicable | 1 | not applicable |
+
+`changed_code` agreed with one model's labels on 28 of 28 shell-only turns. The misses in the table above this section (10 of 24 at 0.7) are all turns that changed no project file: closing issues, scratch files, notes. On the turns the finding applies to, it missed none and raised no false alarm, on 12 labelled turns.
 
 ## Evidence for the check outcome
 
@@ -106,3 +119,4 @@ The exit status agreed with the labels on 1 of 24 failures: the rest were hidden
 > | 2026-11-17 | The unfinished finding is asked as two questions; evidence replaced with the replay on two-labeller agreement. | **substantive** |
 > | 2026-11-17 | Added the `unknown` verdict and the `check_failed` question that settles it, with replay evidence. | **substantive** |
 > | 2026-11-17 | A piped or chained check command has no trusted outcome and is decided by `check_failed`. | **substantive** |
+> | 2026-11-17 | The claim finding needs a change to project files: `changed_code` is asked for shell-only turns. | **substantive** |
