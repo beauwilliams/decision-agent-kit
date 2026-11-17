@@ -22,12 +22,17 @@ each harness gets a thin adapter, and each model is a base address, a model name
 | Check                                | Status                           |
 | ------------------------------------ | -------------------------------- |
 | Stop check: is the turn really done? | Works, in shadow mode by default |
-| Trimming tool output as it arrives   | Planned (EPIC-3)                 |
+| Trimming tool output as it arrives   | Measured and parked (SPEC-2)     |
 | Compaction that keeps items verbatim | Planned, shadow only (EPIC-3)    |
-| Risk gate on shell commands          | Planned (EPIC-4)                 |
+| Risk gate on shell commands          | Measured and parked (SPEC-3)     |
 
 The plan is in [`docs/epic/`](docs/epic/), and what each check has been measured to do is in its
 spec.
+
+Trimming and the risk gate were built as far as a decision function and replayed over recorded
+sessions. Neither earned a place: trimming cut no better than keeping the first and last lines, and
+the sessions held almost nothing for the risk gate to catch. Both are switched off and not wired
+into any harness.
 
 ## Quick start
 
