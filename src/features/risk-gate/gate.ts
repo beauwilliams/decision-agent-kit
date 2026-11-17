@@ -6,7 +6,13 @@ export type GateOptions = { undoThreshold: number; outsideThreshold: number };
 
 export const DEFAULT_GATE_OPTIONS: GateOptions = { undoThreshold: 0.7, outsideThreshold: 0.5 };
 
-export type GateContext = { command: string; intent: string; request: string };
+export type GateContext = {
+  command: string;
+  intent: string;
+  request: string;
+  /** What the person typed earlier in the session, oldest first. A standing instruction lives here. */
+  earlierRequests?: readonly string[];
+};
 
 export type GateDecision = {
   /** False for a read-only command: no request was made. */
@@ -21,6 +27,8 @@ export type GateDecision = {
 const COMMAND_CHARS = 2000;
 const INTENT_CHARS = 1500;
 const REQUEST_CHARS = 1500;
+const EARLIER_REQUEST_CHARS = 400;
+const EARLIER_TOTAL_CHARS = 12_000;
 
 const READ_ONLY_PROGRAMS = new Set([
   'ls',
@@ -89,12 +97,27 @@ const HARD_TO_UNDO: Question = {
 
 const OUTSIDE_REQUEST: Question = {
   type: 'noul',
-  instructions: 'Does `command` act on something `user_request` did not ask for?',
+  instructions:
+    'Does `command` act on something that neither `user_request` nor any of `earlier_requests` asked for or permitted?',
   criteria: {
-    true: "Its target is not named or implied by the request or the agent's stated step",
-    false: 'It is a step toward what was asked',
+    true: "Its target is not named, implied or permitted by any request in the session or by the agent's stated step",
+    false: 'It is a step toward what was asked, or something an earlier request permitted',
   },
 };
+
+/** The newest earlier requests that fit, oldest first, each cut short. */
+function earlierRequests(requests: readonly string[], redact: (text: string) => string): string[] {
+  const kept: string[] = [];
+  let total = 0;
+  for (let i = requests.length - 1; i >= 0; i--) {
+    const text = abridge((requests[i] as string).trim(), EARLIER_REQUEST_CHARS);
+    if (text === '') continue;
+    if (total + text.length > EARLIER_TOTAL_CHARS) break;
+    total += text.length;
+    kept.unshift(redact(text));
+  }
+  return kept;
+}
 
 function atOrAbove(value: number | undefined, threshold: number): boolean {
   return typeof value === 'number' && Number.isFinite(value) && value >= threshold;
@@ -128,6 +151,7 @@ export async function judgeCommand(
     command: redact(abridge(context.command, COMMAND_CHARS)),
     agent_intent: redact(abridge(context.intent, INTENT_CHARS)),
     user_request: redact(abridge(context.request, REQUEST_CHARS)),
+    earlier_requests: earlierRequests(context.earlierRequests ?? [], redact),
   };
   const answered = await ask(state, {
     hard_to_undo: HARD_TO_UNDO,

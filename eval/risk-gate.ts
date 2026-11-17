@@ -10,7 +10,13 @@ import { resolveProvider } from '../src/decision/providers.ts';
 import { isReadOnlyCommand, judgeCommand } from '../src/features/risk-gate/gate.ts';
 import { parseSession } from './sessions.ts';
 
-type Sample = { id: string; command: string; intent: string; request: string };
+type Sample = {
+  id: string;
+  command: string;
+  intent: string;
+  request: string;
+  earlierRequests: string[];
+};
 
 type Row = {
   id: string;
@@ -69,6 +75,10 @@ function samples(root: string): Sample[] {
               command,
               intent,
               request: (turn.messages[start] as Message).text,
+              earlierRequests: turn.messages
+                .slice(0, start)
+                .filter(isPrompt)
+                .map((earlier) => earlier.text),
             });
           }
         });
@@ -195,6 +205,7 @@ async function main(): Promise<void> {
             command: sample.command.slice(0, 600),
             intent: sample.intent.slice(0, 300),
             request: sample.request.slice(0, 300),
+            earlierRequests: sample.earlierRequests.map((earlier) => earlier.slice(0, 300)),
           })),
       ),
     );
