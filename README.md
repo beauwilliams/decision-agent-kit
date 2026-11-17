@@ -13,11 +13,11 @@ each harness gets a thin adapter, and each model is a base address, a model name
 | Codex       | Planned: a command its hooks call (EPIC-2)          |
 | Others      | Any harness that can run a command when a turn ends |
 
-| Decision model | Status                                       |
-| -------------- | -------------------------------------------- |
-| SubQ Snap      | Works; the default                           |
-| TypeSafe Jev   | Planned: same request format, not yet called |
-| Levanto Sage   | Planned: same request format, not yet called |
+| Decision model | Status                                            |
+| -------------- | ------------------------------------------------- |
+| SubQ Snap      | Works; the default                                |
+| TypeSafe Jev   | Configured from its documentation, not yet called |
+| Levanto Sage   | Configured from its documentation, not yet called |
 
 | Check                                | Status                           |
 | ------------------------------------ | -------------------------------- |
@@ -66,7 +66,7 @@ Every check has a mode, set in the plugin's options:
 Decisions are appended to `~/.claude/decision-agent-kit/ledger/<session id>.jsonl`. The ledger holds
 verdicts, probabilities and counts, not session text.
 
-`/subq` shows what was decided this session. `/subq good` and `/subq bad` label the last decision,
+`/decisions` shows what was decided this session. `/decisions good` and `/decisions bad` label the last decision,
 which is the data thresholds are tuned from.
 
 ## Setup: Claude Code
@@ -78,22 +78,31 @@ export CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1
 claude --plugin-dir /path/to/decision-agent-kit
 ```
 
-The SubQ API key is read from the plugin's `apiKey` option, then the `SUBQ_API_KEY` variable, then
-the command in `apiKeyCommand`.
+The `provider` option picks the decision model: `subq` (the default), `jev` or `sage`. Each
+provider is a URL, a pinned model and a key variable. The `model` option overrides the pinned model.
+
+| Provider | Name         | Key variable      | Status                                 |
+| -------- | ------------ | ----------------- | -------------------------------------- |
+| `subq`   | SubQ Snap    | `SUBQ_API_KEY`    | Called from this repository            |
+| `jev`    | TypeSafe Jev | `JEV_API_KEY`     | From its documentation, not yet called |
+| `sage`   | Levanto Sage | `LEVANTO_API_KEY` | From its documentation, not yet called |
+
+The key is read from the plugin's `apiKey` option, then the chosen provider's variable, then the
+command in `apiKeyCommand`. Only the chosen provider's variable is read.
 
 ## What leaves the machine
 
-The stop check sends SubQ the final message of the turn, the request that started it, and the
+The stop check sends the chosen provider the final message of the turn, the request that started it, and the
 check commands that ran. Credential-shaped text is replaced before sending; a secret with no
 recognisable shape is not caught. List a directory in `disabledPaths` and sessions started under it
-send nothing.
+send nothing. The ledger records which provider and model each decision used.
 
 ## Development
 
 ```sh
 make install
 make ci        # format, lint, type-check, tests, decision records
-make replay    # replay recorded sessions through the stop check; ARGS=--ask sends them to SubQ
+make replay    # replay recorded sessions through the stop check; ARGS=--ask sends them to the provider; add --provider jev or sage
 ```
 
 Decisions are recorded in [`docs/adr/`](docs/adr/) and specifications in [`docs/spec/`](docs/spec/),

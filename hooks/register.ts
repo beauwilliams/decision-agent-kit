@@ -1,6 +1,7 @@
 import type { EngineInterface, PluginOptions, Register } from 'claude-code';
 
-import { createAsker, DEFAULT_MODEL, type Fetch } from '../src/subq/client.ts';
+import { createAsker, type Fetch } from '../src/decision/client.ts';
+import { resolveProvider, type Provider } from '../src/decision/providers.ts';
 import {
   checkStop,
   DEFAULT_STOP_CHECK_OPTIONS,
@@ -13,6 +14,7 @@ type Mode = 'off' | 'shadow' | 'on';
 type Config = {
   stopCheck: Mode;
   stopCheckOptions: StopCheckOptions;
+  provider: Provider;
   apiKey: string | undefined;
   apiKeyCommand: string[];
   disabledPaths: string[];
@@ -38,6 +40,7 @@ function mode(options: PluginOptions, key: string): Mode {
 }
 
 export function resolveConfig(options: PluginOptions): Config {
+  const provider = resolveProvider(text(options, 'provider'));
   return {
     stopCheck: mode(options, 'stopCheck'),
     stopCheckOptions: {
@@ -54,13 +57,14 @@ export function resolveConfig(options: PluginOptions): Config {
       ),
       minToolCalls: DEFAULT_STOP_CHECK_OPTIONS.minToolCalls,
     },
+    provider,
     apiKey: text(options, 'apiKey'),
     apiKeyCommand: (text(options, 'apiKeyCommand') ?? '').split(/\s+/).filter(Boolean),
     disabledPaths: (text(options, 'disabledPaths') ?? '')
       .split(',')
       .map((path) => path.trim().replace(/\/+$/, ''))
       .filter(Boolean),
-    model: text(options, 'model') ?? DEFAULT_MODEL,
+    model: text(options, 'model') ?? provider.model,
     timeoutMs: number(options, 'timeoutMs', 8000),
   };
 }
@@ -73,17 +77,45 @@ export function findingsNote(result: StopCheckResult): string {
   return result.findings.map((finding) => `Stop check: ${finding.message}.`).join('\n');
 }
 
-let cachedKey: string | undefined;
+const cachedKeys = new Map<string, string>();
+
+// The validator wants a literal name in each $.env.get call, so each key
+// variable is read by its own case.
+async function readKeyVariable($: EngineInterface, name: string): Promise<string | undefined> {
+  switch (name) {
+    case 'SUBQ_API_KEY':
+      return await $.env.get('SUBQ_API_KEY');
+    case 'JEV_API_KEY':
+      return await $.env.get('JEV_API_KEY');
+    case 'LEVANTO_API_KEY':
+      return await $.env.get('LEVANTO_API_KEY');
+    default:
+      return undefined;
+  }
+}
+
+/** Only the chosen provider's variable is looked up, so another provider's key is never read. */
+export async function resolveKey(
+  config: Pick<Config, 'apiKey' | 'provider'>,
+  lookup: (name: string) => Promise<string | undefined>,
+): Promise<string | undefined> {
+  return config.apiKey ?? (await lookup(config.provider.keyVariable));
+}
 
 async function apiKey($: EngineInterface, config: Config): Promise<string> {
-  if (cachedKey) return cachedKey;
-  let key = config.apiKey ?? (await $.env.get('SUBQ_API_KEY'));
+  const cached = cachedKeys.get(config.provider.id);
+  if (cached) return cached;
+  let key = await resolveKey(config, (name) => readKeyVariable($, name));
   if (!key && config.apiKeyCommand.length > 0) {
     const ran = await $.process.run(config.apiKeyCommand, { timeoutMs: 10_000 });
     if (ran.exitCode === 0) key = ran.stdout.trim();
   }
-  if (!key) throw new Error('no SubQ API key: set apiKey, SUBQ_API_KEY or apiKeyCommand');
-  cachedKey = key;
+  if (!key) {
+    throw new Error(
+      `no ${config.provider.name} API key: set apiKey, ${config.provider.keyVariable} or apiKeyCommand`,
+    );
+  }
+  cachedKeys.set(config.provider.id, key);
   return key;
 }
 
@@ -109,19 +141,43 @@ async function entries($: EngineInterface): Promise<LedgerEntry[]> {
     .map((line) => JSON.parse(line) as LedgerEntry);
 }
 
+export function stopCheckEntry(
+  config: Pick<Config, 'stopCheck' | 'provider' | 'model'>,
+  turnId: string,
+  result: StopCheckResult,
+  ms: number,
+  at: string,
+): LedgerEntry {
+  return {
+    at,
+    feature: 'stop-check',
+    mode: config.stopCheck,
+    provider: config.provider.id,
+    model: config.model,
+    turnId,
+    verdict: result.verdict,
+    asked: result.asked,
+    findings: result.findings,
+    probabilities: result.probabilities,
+    facts: result.facts,
+    inputTokens: result.inputTokens,
+    ms,
+  };
+}
+
 export const register: Register = (on, options) => {
   const config = resolveConfig(options);
 
   on('session.start', async ($, e, next) => {
     await $.command.register({
-      name: 'subq',
-      description: 'Show what the SubQ checks decided this session, or label the last one',
+      name: 'decisions',
+      description: 'Show what the decision checks decided this session, or label the last one',
       argumentHint: '[good|bad]',
     });
     return next(e);
   });
 
-  on('command.run', { command: 'subq' }, async ($, e) => {
+  on('command.run', { command: 'decisions' }, async ($, e) => {
     const all = await entries($);
     const decisions = all.filter((entry) => entry.feature === 'stop-check');
     const last = decisions.at(-1);
@@ -141,7 +197,7 @@ export const register: Register = (on, options) => {
     );
     const asked = decisions.filter((entry) => entry.asked === true);
     const lines = [
-      `Stop check is ${config.stopCheck}. This session: ${decisions.length} turns checked, ${asked.length} asked of SubQ, ${flagged.length} flagged.`,
+      `Stop check is ${config.stopCheck} (${config.provider.name}, ${config.model}). This session: ${decisions.length} turns checked, ${asked.length} asked of the model, ${flagged.length} flagged.`,
     ];
     if (last) {
       const found = (last.findings as { message: string }[] | undefined) ?? [];
@@ -175,6 +231,7 @@ export const register: Register = (on, options) => {
         },
         fetch,
         sleep,
+        url: config.provider.url,
         model: config.model,
         maxRetries: 1,
       });
@@ -194,19 +251,10 @@ export const register: Register = (on, options) => {
         ),
         timeout,
       ]);
-      await record($, {
-        at: new Date().toISOString(),
-        feature: 'stop-check',
-        mode: config.stopCheck,
-        turnId: e.turnId,
-        verdict: result.verdict,
-        asked: result.asked,
-        findings: result.findings,
-        probabilities: result.probabilities,
-        facts: result.facts,
-        inputTokens: result.inputTokens,
-        ms: Date.now() - started,
-      });
+      await record(
+        $,
+        stopCheckEntry(config, e.turnId, result, Date.now() - started, new Date().toISOString()),
+      );
       if (config.stopCheck !== 'on' || result.findings.length === 0) return settled;
       const note = findingsNote(result);
       $.ui.toast(note, { timeoutMs: 12_000 });
