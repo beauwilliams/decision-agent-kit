@@ -1,0 +1,14 @@
+{
+  "name": "decision-agent-kit",
+  "owner": {
+    "name": "urzuahq",
+    "url": "https://github.com/urzuahq"
+  },
+  "plugins": [
+    {
+      "name": "decision-agent-kit",
+      "source": "./",
+      "description": "Asks a decision model whether the agent's work is really done when a turn ends, and records the answer."
+    }
+  ]
+}

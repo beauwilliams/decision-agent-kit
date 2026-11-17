@@ -215,6 +215,15 @@ describe('modes', () => {
   });
 });
 
+describe('where state is kept', () => {
+  it('uses the plugin data folder when the harness gives one', async () => {
+    const d = deps({ SUBQ_API_KEY: KEY });
+    d.env = { PLUGIN_DATA: join(home, 'plugin-data'), SUBQ_API_KEY: KEY };
+    await feed(fixture, d);
+    expect(existsSync(join(home, 'plugin-data', 'ledger', `${SESSION}.jsonl`))).toBe(true);
+  });
+});
+
 describe('bad input', () => {
   it.each(['../x', 'a/b', '..', 'a..b', ''])('refuses the session id %j', async (id) => {
     const event = { ...(fixture[0] as CodexEvent), session_id: id };
