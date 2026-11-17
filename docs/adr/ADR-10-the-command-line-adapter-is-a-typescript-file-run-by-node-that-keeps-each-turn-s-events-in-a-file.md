@@ -1,6 +1,6 @@
 ---
 Stable-Id: 01M7M80VYB6H6ETAXY5KFA4966
-Status: Proposed
+Status: Accepted
 Date: 2026-11-17
 Author: beauwilliams
 Deciders: beauwilliams
@@ -51,3 +51,4 @@ The command-line adapter is `cli/hook.ts`, TypeScript source run by Node 24 with
 > |---|---|---|
 > | 2026-11-17 | Initial record. | **structural** |
 > | 2026-11-17 | Delivered as a Codex plugin with hooks in its manifest; state under the plugin data folder; measured start cost. | **substantive** |
+> | 2026-11-17 | Accepted by beauwilliams in chat after being shown the record in full. The dictated message read "Except ADR 10", in reply to "Reply 'accept ADR-10' and I'll record it"; taken as "Accept ADR 10". | **structural** |
