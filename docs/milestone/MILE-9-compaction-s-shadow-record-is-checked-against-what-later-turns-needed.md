@@ -10,9 +10,10 @@ Depends-on: MILE-8
 
 ## Outcome
 
-We know how often an item the kit would have dropped was needed afterwards.
+We know how often an item the kit would have dropped was read or referred to afterwards.
 
 ## Done means
 
 - A report compares dropped items with what later turns read or referred to. Evidence: the report.
+- The report states that it counts explicit reads and references only, and not use that leaves no trace. Evidence: the report.
 - An ADR decides whether compaction may leave shadow mode, citing the report. Evidence: the ADR.
