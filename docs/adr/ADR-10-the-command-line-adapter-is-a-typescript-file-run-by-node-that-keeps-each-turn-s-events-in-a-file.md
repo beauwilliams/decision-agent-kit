@@ -26,11 +26,13 @@ ADR-2 rules out a build step and runtime dependencies.
 
 ## Decision
 
-The command-line adapter is `cli/hook.ts`, run as `node <kit>/cli/hook.ts`. Node 24 runs TypeScript source directly, as it already does for `eval/`.
+The command-line adapter is `cli/hook.ts`, TypeScript source run by Node 24 with no build, as `eval/` already is.
+
+- For Codex it is delivered as a Codex plugin: `.codex-plugin/plugin.json` names a hooks file, and each hook runs `node "${PLUGIN_ROOT}/cli/hook.ts"`. The repository is its own marketplace, so it installs with `codex plugin marketplace add` and `codex plugin add` (TASK-20). A harness with command hooks and no plugin system registers the same command by hand.
 
 - It is registered on three events: prompt submitted, after a tool call, and stop.
 - On the first two it appends the event to `turns/<session>.jsonl` under the kit's state directory. On stop it reads that file, runs the stop check, writes one ledger entry and removes the turn's events.
-- The state directory is `$DECISION_AGENT_KIT_HOME`, else `$XDG_STATE_HOME/decision-agent-kit`, else `~/.local/state/decision-agent-kit`. The ledger is `ledger/<session>.jsonl` inside it, in the format the plugin writes.
+- The state directory is `$DECISION_AGENT_KIT_HOME`, else the `PLUGIN_DATA` folder the harness gives a plugin, else `$XDG_STATE_HOME/decision-agent-kit`, else `~/.local/state/decision-agent-kit`. The ledger is `ledger/<session>.jsonl` inside it, in the format the plugin writes.
 - Settings come from environment variables, since a command hook has no options: `DECISION_AGENT_KIT_STOP_CHECK` (`off`, `shadow`, `on`), `DECISION_AGENT_KIT_PROVIDER`, the provider's own key variable, and `DECISION_AGENT_KIT_KEY_COMMAND`.
 - It always exits 0 and never asks the harness to block or continue the turn (ADR-4). In `on` mode it prints a note for the harness to show; otherwise it prints nothing.
 
@@ -40,10 +42,12 @@ The command-line adapter is `cli/hook.ts`, run as `node <kit>/cli/hook.ts`. Node
 - Turn files hold the person's prompts and command output in plain text until the turn ends. They are written with owner-only permissions and removed at stop; a session that ends without a stop event leaves one behind.
 - The plugin's ledger stays under `~/.claude/`, so the two adapters share a format and not a directory.
 - Where the harness reports no outcome for a command, the verdict is `unknown` until TASK-19.
-- Each event costs a Node start, tens of milliseconds.
+- Each event costs a Node start, about 0.15 seconds measured on the development machine.
+- The machine running Codex needs Node 24 on its path.
 
 > **Revision log**
 >
 > | Date | Change | Class |
 > |---|---|---|
 > | 2026-11-17 | Initial record. | **structural** |
+> | 2026-11-17 | Delivered as a Codex plugin with hooks in its manifest; state under the plugin data folder; measured start cost. | **substantive** |

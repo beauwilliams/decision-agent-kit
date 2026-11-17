@@ -44,6 +44,7 @@ function mode(env: Deps['env']): Mode {
 function stateDir(deps: Deps): string {
   const { env } = deps;
   if (env.DECISION_AGENT_KIT_HOME) return env.DECISION_AGENT_KIT_HOME;
+  if (env.PLUGIN_DATA) return env.PLUGIN_DATA;
   if (env.XDG_STATE_HOME) return join(env.XDG_STATE_HOME, 'decision-agent-kit');
   return join(deps.home, '.local', 'state', 'decision-agent-kit');
 }

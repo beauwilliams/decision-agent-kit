@@ -1,0 +1,21 @@
+{
+  "name": "decision-agent-kit",
+  "version": "0.1.0",
+  "description": "Asks a decision model whether the agent's work is really done when a turn ends, and records the answer.",
+  "author": {
+    "name": "urzuahq",
+    "url": "https://github.com/urzuahq"
+  },
+  "homepage": "https://github.com/urzuahq/decision-agent-kit",
+  "repository": "https://github.com/urzuahq/decision-agent-kit",
+  "license": "MIT",
+  "keywords": ["decision-models", "hooks", "stop-check", "codex"],
+  "hooks": "./.codex-plugin/hooks.json",
+  "interface": {
+    "displayName": "Decision Agent Kit",
+    "shortDescription": "A decision model checks the end of each turn",
+    "developerName": "urzuahq",
+    "category": "Coding",
+    "websiteURL": "https://github.com/urzuahq/decision-agent-kit"
+  }
+}
