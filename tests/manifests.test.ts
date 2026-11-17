@@ -26,6 +26,17 @@ describe('plugin manifests', () => {
     expect(plugins[0]?.source).toBe('./');
   });
 
+  it('ship a setup skill whose name matches its folder', () => {
+    expect(codex.skills).toBe('./skills/');
+    const skill = readFileSync(
+      new URL('../skills/setup-decision-agent-kit/SKILL.md', import.meta.url),
+      'utf8',
+    );
+    const front = /^---\n([\s\S]*?)\n---\n/.exec(skill)?.[1] ?? '';
+    expect(front).toMatch(/^name: setup-decision-agent-kit$/m);
+    expect(front).toMatch(/^description: \S.{40,}$/m);
+  });
+
   it('point the Codex hooks at a command that exists, on the events the adapter reads', () => {
     const path = String(codex.hooks).replace(/^\.\//, '');
     const hooks = read(path).hooks as Record<string, { hooks: { command: string }[] }[]>;
