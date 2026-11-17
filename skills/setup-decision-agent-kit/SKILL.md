@@ -108,8 +108,9 @@ With no key the kit does nothing harmful: the check is skipped and the ledger sa
 - Sent to the provider for each checked turn: the final message, the request that started the turn,
   and the test and build commands that were run. Text shaped like a credential is replaced first; a secret with no
   recognisable shape is not caught.
-  File contents are not sent. In Codex, an excerpt of the last test or build output is sent too,
-  because Codex does not say whether a command passed.
+  File contents are not sent. An excerpt of the last test or build output is sent when the kit
+  cannot tell whether it passed: always in Codex, and in Claude Code when the command was piped or
+  chained.
 - A turn that changed no files and made fewer than three tool calls is not sent at all.
 
 ## Removing it
