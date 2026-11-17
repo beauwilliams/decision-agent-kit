@@ -67,6 +67,7 @@ send nothing.
 ```sh
 make install
 make ci        # format, lint, type-check, tests, decision records
+make replay    # replay recorded sessions through the stop check; ARGS=--ask sends them to SubQ
 ```
 
 Decisions are recorded in [`docs/adr/`](docs/adr/) and specifications in [`docs/spec/`](docs/spec/),
