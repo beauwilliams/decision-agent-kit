@@ -12,7 +12,12 @@
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "paths": { "claude-code": ["./.claude-plugin/types/claude-code/index.d.ts"] }
+    "paths": {
+      "claude-code": [
+        "./.claude-plugin/types/claude-code/index.d.ts",
+        "./types/claude-code/index.d.ts"
+      ]
+    }
   },
   "include": ["hooks", "src", ".claude-plugin/types/claude-code/index.d.ts"]
 }
