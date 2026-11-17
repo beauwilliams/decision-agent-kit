@@ -1,15 +1,37 @@
 # decision-agent-kit
 
-A Claude Code plugin that asks a decision model typed questions about a coding session and acts on
-the probabilities. It uses [SubQ](https://subq.ai) Snap today; TypeSafe Jev and Levanto Sage are
-planned (ADR-7). A decision model returns a yes/no probability, a
-choice or a score, and no generated text, so a check costs about a second and a fraction of a cent.
+Tooling that lets a coding agent's harness ask a decision model about the session and act on the
+answer. A decision model returns a yes/no probability, a choice or a score, and no generated text,
+so a check costs about a second and a fraction of a cent.
 
-The first check is the **stop check**: when a turn ends, did the agent really finish?
+The kit is built to work across harnesses and across decision models. One core holds the checks;
+each harness gets a thin adapter, and each model is a base address, a model name and a key.
+
+| Harness     | Status                                              |
+| ----------- | --------------------------------------------------- |
+| Claude Code | Works, as a plugin (function hooks, early access)   |
+| Codex       | Planned: a command its hooks call (EPIC-2)          |
+| Others      | Any harness that can run a command when a turn ends |
+
+| Decision model | Status                                       |
+| -------------- | -------------------------------------------- |
+| SubQ Snap      | Works; the default                           |
+| TypeSafe Jev   | Planned: same request format, not yet called |
+| Levanto Sage   | Planned: same request format, not yet called |
+
+| Check                                | Status                           |
+| ------------------------------------ | -------------------------------- |
+| Stop check: is the turn really done? | Works, in shadow mode by default |
+| Trimming tool output as it arrives   | Planned (EPIC-3)                 |
+| Compaction that keeps items verbatim | Planned, shadow only (EPIC-3)    |
+| Risk gate on shell commands          | Planned (EPIC-4)                 |
+
+The plan is in [`docs/epic/`](docs/epic/), and what each check has been measured to do is in its
+spec.
 
 ## The stop check
 
-At the end of each turn the plugin reads what the turn did, without a model:
+At the end of each turn the kit reads what the turn did, without a model:
 
 - which files were edited,
 - which test, build or lint commands ran, whether each passed, and whether it ran after the last
@@ -18,7 +40,7 @@ At the end of each turn the plugin reads what the turn did, without a model:
 Rules settle what those facts prove. A check that failed after the last edit is flagged with no
 model call. A check that passed after the last edit counts as verified.
 
-SubQ is asked only how the final message reads, and only for a turn that did real work:
+The model is asked only how the final message reads, and only for a turn that did real work:
 
 | Question                                                                  | Flagged when                                                                  |
 | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
@@ -28,9 +50,12 @@ SubQ is asked only how the final message reads, and only for a turn that did rea
 A flagged turn gets a note under the reply. The note never re-prompts the agent and never blocks
 anything.
 
+Measured on replayed sessions (SPEC-1): both questions rarely speak when nothing is wrong, and both
+miss a share of real cases. That is why the default is shadow mode.
+
 ## Modes
 
-Every feature has a mode, set in the plugin's options:
+Every check has a mode, set in the plugin's options:
 
 | Mode     | Behaviour                                                    |
 | -------- | ------------------------------------------------------------ |
@@ -44,7 +69,7 @@ verdicts, probabilities and counts, not session text.
 `/subq` shows what was decided this session. `/subq good` and `/subq bad` label the last decision,
 which is the data thresholds are tuned from.
 
-## Setup
+## Setup: Claude Code
 
 Function hooks are early access in Claude Code:
 
