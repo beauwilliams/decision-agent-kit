@@ -6,10 +6,19 @@ import {
   checkStop,
   DEFAULT_STOP_CHECK_OPTIONS,
   type StopCheckOptions,
-  type StopCheckResult,
 } from '../src/features/stop-check/check.ts';
-
-type Mode = 'off' | 'shadow' | 'on';
+import {
+  checkedEntries,
+  findingsNote,
+  formatEntry,
+  parseLedger,
+  skippedEntry,
+  stopCheckEntry,
+  summarize,
+  withoutKey,
+  type LedgerEntry,
+  type Mode,
+} from '../src/features/stop-check/ledger.ts';
 
 type Config = {
   stopCheck: Mode;
@@ -21,8 +30,6 @@ type Config = {
   model: string;
   timeoutMs: number;
 };
-
-type LedgerEntry = Record<string, unknown> & { at: string; feature: string };
 
 function text(options: PluginOptions, key: string): string | undefined {
   const value = options[key];
@@ -71,10 +78,6 @@ export function resolveConfig(options: PluginOptions): Config {
 
 export function isDisabledFor(cwd: string, disabledPaths: readonly string[]): boolean {
   return disabledPaths.some((path) => cwd === path || cwd.startsWith(`${path}/`));
-}
-
-export function findingsNote(result: StopCheckResult): string {
-  return result.findings.map((finding) => `Stop check: ${finding.message}.`).join('\n');
 }
 
 const cachedKeys = new Map<string, string>();
@@ -131,38 +134,15 @@ async function readLedger($: EngineInterface): Promise<string> {
 
 async function record($: EngineInterface, entry: LedgerEntry): Promise<void> {
   const existing = await readLedger($);
-  await $.fs.write(await ledgerPath($), `${existing}${JSON.stringify(entry)}\n`);
+  await $.fs.write(await ledgerPath($), `${existing}${formatEntry(entry)}`);
 }
 
 async function entries($: EngineInterface): Promise<LedgerEntry[]> {
-  return (await readLedger($))
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as LedgerEntry);
+  return parseLedger(await readLedger($));
 }
 
-export function stopCheckEntry(
-  config: Pick<Config, 'stopCheck' | 'provider' | 'model'>,
-  turnId: string,
-  result: StopCheckResult,
-  ms: number,
-  at: string,
-): LedgerEntry {
-  return {
-    at,
-    feature: 'stop-check',
-    mode: config.stopCheck,
-    provider: config.provider.id,
-    model: config.model,
-    turnId,
-    verdict: result.verdict,
-    asked: result.asked,
-    findings: result.findings,
-    probabilities: result.probabilities,
-    facts: result.facts,
-    inputTokens: result.inputTokens,
-    ms,
-  };
+function ledgerSettings(config: Config): { mode: Mode; provider: string; model: string } {
+  return { mode: config.stopCheck, provider: config.provider.id, model: config.model };
 }
 
 export const register: Register = (on, options) => {
@@ -179,8 +159,7 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'decisions' }, async ($, e) => {
     const all = await entries($);
-    const decisions = all.filter((entry) => entry.feature === 'stop-check');
-    const last = decisions.at(-1);
+    const last = checkedEntries(all).at(-1);
     const label = e.args.trim();
     if (label === 'good' || label === 'bad') {
       if (!last) return { text: 'Nothing to label yet.' };
@@ -192,19 +171,11 @@ export const register: Register = (on, options) => {
       });
       return { text: `Labelled the last stop check ${label}.` };
     }
-    const flagged = decisions.filter(
-      (entry) => Array.isArray(entry.findings) && entry.findings.length > 0,
-    );
-    const asked = decisions.filter((entry) => entry.asked === true);
-    const lines = [
-      `Stop check is ${config.stopCheck} (${config.provider.name}, ${config.model}). This session: ${decisions.length} turns checked, ${asked.length} asked of the model, ${flagged.length} flagged.`,
-    ];
-    if (last) {
-      const found = (last.findings as { message: string }[] | undefined) ?? [];
-      lines.push(
-        `Last turn: ${String(last.verdict)}${found.length > 0 ? `; ${found.map((finding) => finding.message).join('; ')}` : '; nothing flagged'}.`,
-      );
-    }
+    const lines = summarize(all, {
+      mode: config.stopCheck,
+      providerName: config.provider.name,
+      model: config.model,
+    });
     if (isDisabledFor(await $.session.cwd(), config.disabledPaths)) {
       lines.push('Checks are disabled for this directory.');
     }
@@ -216,6 +187,7 @@ export const register: Register = (on, options) => {
     if (config.stopCheck === 'off' || e.agentId !== undefined || e.reason !== 'answer') {
       return settled;
     }
+    let key: string | undefined;
     try {
       if (isDisabledFor(await $.session.cwd(), config.disabledPaths)) return settled;
       const started = Date.now();
@@ -224,7 +196,6 @@ export const register: Register = (on, options) => {
         return { status: response.status, ok: response.ok, text: response.text };
       };
       const sleep = (ms: number): Promise<unknown> => $.clock.sleep(ms);
-      let key: string | undefined;
       const ask = createAsker({
         get apiKey() {
           return key ?? '';
@@ -253,14 +224,29 @@ export const register: Register = (on, options) => {
       ]);
       await record(
         $,
-        stopCheckEntry(config, e.turnId, result, Date.now() - started, new Date().toISOString()),
+        stopCheckEntry(
+          ledgerSettings(config),
+          e.turnId,
+          result,
+          Date.now() - started,
+          new Date().toISOString(),
+        ),
       );
       if (config.stopCheck !== 'on' || result.findings.length === 0) return settled;
       const note = findingsNote(result);
       $.ui.toast(note, { timeoutMs: 12_000 });
       return { ...settled, text: note };
     } catch (error) {
-      $.ui.log(`stop check skipped: ${error instanceof Error ? error.message : String(error)}`);
+      const reason = withoutKey(error instanceof Error ? error.message : String(error), key);
+      $.ui.log(`stop check skipped: ${reason}`);
+      try {
+        await record(
+          $,
+          skippedEntry(ledgerSettings(config), e.turnId, reason, new Date().toISOString()),
+        );
+      } catch {
+        // Best effort: the log line above already carries the reason.
+      }
       return settled;
     }
   });

@@ -7,11 +7,11 @@ so a check costs about a second and a fraction of a cent.
 The kit is built to work across harnesses and across decision models. One core holds the checks;
 each harness gets a thin adapter, and each model is a base address, a model name and a key.
 
-| Harness     | Status                                              |
-| ----------- | --------------------------------------------------- |
-| Claude Code | Works, as a plugin (function hooks, early access)   |
-| Codex       | Planned: a command its hooks call (EPIC-2)          |
-| Others      | Any harness that can run a command when a turn ends |
+| Harness     | Status                                                                               |
+| ----------- | ------------------------------------------------------------------------------------ |
+| Claude Code | Works, as a plugin (function hooks, early access)                                    |
+| Codex       | Runs the stop check in shadow from command hooks; untested in an interactive session |
+| Others      | Any harness that can run a command when a turn ends                                  |
 
 | Decision model | Status                                            |
 | -------------- | ------------------------------------------------- |
@@ -89,6 +89,36 @@ provider is a URL, a pinned model and a key variable. The `model` option overrid
 
 The key is read from the plugin's `apiKey` option, then the chosen provider's variable, then the
 command in `apiKeyCommand`. Only the chosen provider's variable is read.
+
+## Setup: Codex
+
+The command `cli/hook.ts` runs under Node 24 with no build step. Codex starts it once per hook
+event (verified against Codex 0.167.2):
+
+1. Copy [`examples/codex-hooks.json`](examples/codex-hooks.json) to Codex's `hooks.json` and replace
+   `/path/to/decision-agent-kit` with the checkout's path.
+2. Export the chosen provider's key variable (`SUBQ_API_KEY` by default), or set
+   `DECISION_AGENT_KIT_KEY_COMMAND` to a command that prints the key.
+
+Settings are environment variables: `DECISION_AGENT_KIT_STOP_CHECK` (`off`, `shadow` or `on`;
+shadow is the default), `DECISION_AGENT_KIT_PROVIDER` (`subq`, `jev` or `sage`) and
+`DECISION_AGENT_KIT_KEY_COMMAND`.
+
+Decisions are appended to
+`$DECISION_AGENT_KIT_HOME/ledger/<session id>.jsonl`, else
+`$XDG_STATE_HOME/decision-agent-kit/ledger/<session id>.jsonl`, else
+`~/.local/state/decision-agent-kit/ledger/<session id>.jsonl`. Entries carry `"harness": "codex"`.
+A check that could not run (no key, timeout, an error from the provider) is recorded as an entry
+with a `skipped` reason, and the reason is printed on standard error.
+
+Codex reports a shell command's output with no exit code, so a test or build run after the last edit
+gives the verdict `unknown`, not `verified` or `failing_check` (TASK-19). For now only the
+model's questions about the final message can flag a turn. The hook has been run against a recorded turn,
+not in an interactive session.
+
+Between events the turn's prompt and command output are kept in
+`<state directory>/turns/<session id>.jsonl`, readable by the owner only, and removed when the turn
+ends.
 
 ## What leaves the machine
 

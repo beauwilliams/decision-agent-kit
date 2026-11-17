@@ -4,6 +4,8 @@ export type ToolUse = {
   input: Record<string, unknown>;
   text?: string;
   isError?: true;
+  /** The harness reports a command's output but not whether it succeeded. */
+  outcomeUnknown?: true;
 };
 
 export type ToolResult = {

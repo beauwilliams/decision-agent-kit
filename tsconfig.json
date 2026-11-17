@@ -14,5 +14,5 @@
     "skipLibCheck": true,
     "paths": { "claude-code": ["./types/claude-code/index.d.ts"] }
   },
-  "include": ["src", "eval", "tests"]
+  "include": ["src", "eval", "tests", "cli"]
 }

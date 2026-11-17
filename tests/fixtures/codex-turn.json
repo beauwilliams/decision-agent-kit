@@ -1,0 +1,113 @@
+[
+  {
+    "session_id": "01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec",
+    "turn_id": "01a1e87e-f0ec-7a53-b6fb-8e948281ec16",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T07-53-15-01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "UserPromptSubmit",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "prompt": "Fix the bug in add.js so add returns the sum. First run 'node --test' to see it fail (create add.test.js with one test for add(2,3)===5 if none exists), then fix add.js, then run 'node --test' again and tell me the result."
+  },
+  {
+    "session_id": "01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec",
+    "turn_id": "01a1e87e-f0ec-7a53-b6fb-8e948281ec16",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T07-53-15-01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "PostToolUse",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "pwd && rg --files -g 'add.js' -g 'add.test.js' -g 'package.json' -g 'AGENTS.md'"
+    },
+    "tool_response": "<project>\nadd.js\n",
+    "tool_use_id": "exec-cce1e895-afd6-4aa0-b185-4b47198248e1"
+  },
+  {
+    "session_id": "01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec",
+    "turn_id": "01a1e87e-f0ec-7a53-b6fb-8e948281ec16",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T07-53-15-01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "PostToolUse",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cat add.js && node --test"
+    },
+    "tool_response": "export function add(a, b) {\n  return a - b;\n}\nℹ tests 0\nℹ suites 0\nℹ pass 0\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 14.736831\n",
+    "tool_use_id": "exec-a7901efd-63e7-4fda-88a5-1723c688196a"
+  },
+  {
+    "session_id": "01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec",
+    "turn_id": "01a1e87e-f0ec-7a53-b6fb-8e948281ec16",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T07-53-15-01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "PostToolUse",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "tool_name": "apply_patch",
+    "tool_input": {
+      "command": "*** Begin Patch\n*** Add File: add.test.js\n+import { test } from 'node:test';\n+import assert from 'node:assert/strict';\n+import { add } from './add.js';\n+\n+test('add(2, 3) returns 5', () => {\n+  assert.equal(add(2, 3), 5);\n+});\n*** End Patch"
+    },
+    "tool_response": "Exit code: 0\nWall time: 0 seconds\nOutput:\nSuccess. Updated the following files:\nA add.test.js\n",
+    "tool_use_id": "exec-f415ffa3-d4b8-4a0a-8021-31a28c35ba83"
+  },
+  {
+    "session_id": "01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec",
+    "turn_id": "01a1e87e-f0ec-7a53-b6fb-8e948281ec16",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T07-53-15-01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "PostToolUse",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "node --test"
+    },
+    "tool_response": "✖ add(2, 3) returns 5 (1.984045ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 110.406638\n\n✖ failing tests:\n\ntest at add.test.js:5:1\n✖ add(2, 3) returns 5 (1.984045ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  -1 !== 5\n  \n      at TestContext.<anonymous> (file://<project>/add.test.js:6:10)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.start (node:internal/test_runner/test:1262:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: -1,\n    expected: 5,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+    "tool_use_id": "exec-2bbee630-c4d0-4638-982e-40f255ac16e1"
+  },
+  {
+    "session_id": "01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec",
+    "turn_id": "01a1e87e-f0ec-7a53-b6fb-8e948281ec16",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T07-53-15-01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "PostToolUse",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "tool_name": "apply_patch",
+    "tool_input": {
+      "command": "*** Begin Patch\n*** Update File: add.js\n@@\n export function add(a, b) {\n-  return a - b;\n+  return a + b;\n }\n*** End Patch"
+    },
+    "tool_response": "Exit code: 0\nWall time: 0 seconds\nOutput:\nSuccess. Updated the following files:\nM add.js\n",
+    "tool_use_id": "exec-9fc12d08-5ef8-4a19-aa69-fcd25188de23"
+  },
+  {
+    "session_id": "01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec",
+    "turn_id": "01a1e87e-f0ec-7a53-b6fb-8e948281ec16",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T07-53-15-01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "PostToolUse",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "node --test"
+    },
+    "tool_response": "✔ add(2, 3) returns 5 (1.525238ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 110.666131\n",
+    "tool_use_id": "exec-53bdf639-767a-46e0-9ae8-b4da1a776992"
+  },
+  {
+    "session_id": "01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec",
+    "turn_id": "01a1e87e-f0ec-7a53-b6fb-8e948281ec16",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T07-53-15-01a1e87e-ee26-72a2-b0b1-bbf4ec82a3ec.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "Stop",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "stop_hook_active": false,
+    "last_assistant_message": "Fixed `add()` to return `a + b` and added a test for `add(2, 3) === 5`.\n\nThe test failed before the fix (`-1 !== 5`) and passed after it: **1 test passed, 0 failed**."
+  }
+]

@@ -2,7 +2,8 @@ import type { Message } from '../../core/transcript.ts';
 
 export type CheckRun = {
   command: string;
-  passed: boolean;
+  /** `null` when the harness reports no outcome for the command. */
+  passed: boolean | null;
   afterLastEdit: boolean;
 };
 
@@ -14,7 +15,7 @@ export type RunEvidence = {
   checks: CheckRun[];
 };
 
-export type Verdict = 'nothing_to_check' | 'verified' | 'failing_check' | 'unverified';
+export type Verdict = 'nothing_to_check' | 'verified' | 'failing_check' | 'unverified' | 'unknown';
 
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit', 'MultiEdit']);
 
@@ -79,7 +80,7 @@ export function collectEvidence(messages: readonly Message[]): RunEvidence {
   }
 
   const edited = new Set<string>();
-  const checks: { command: string; passed: boolean; order: number }[] = [];
+  const checks: { command: string; passed: boolean | null; order: number }[] = [];
   let order = 0;
   let lastEdit = -1;
   let toolCalls = 0;
@@ -104,7 +105,7 @@ export function collectEvidence(messages: readonly Message[]): RunEvidence {
       }
       if (isCheckCommand(command)) {
         const isError = errors.get(use.tool_use_id) ?? use.isError ?? false;
-        checks.push({ command, passed: !isError, order });
+        checks.push({ command, passed: use.outcomeUnknown ? null : !isError, order });
       }
     }
   }
@@ -123,12 +124,14 @@ export function collectEvidence(messages: readonly Message[]): RunEvidence {
 
 /**
  * What the evidence settles by itself. The newest check run after the last
- * edit decides; edits with no check after them are `unverified`.
+ * edit decides; edits with no check after them are `unverified`, and a check
+ * with no reported outcome leaves the verdict `unknown`.
  */
 export function ruleVerdict(evidence: RunEvidence): Verdict {
   if (evidence.editedFiles.length === 0) return 'nothing_to_check';
   const after = evidence.checks.filter((check) => check.afterLastEdit);
   const newest = after[after.length - 1];
   if (!newest) return 'unverified';
+  if (newest.passed === null) return 'unknown';
   return newest.passed ? 'verified' : 'failing_check';
 }

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { createAsker, type Fetch } from '../src/decision/client.ts';
 import { DEFAULT_PROVIDER, resolveProvider } from '../src/decision/providers.ts';
-import { resolveConfig, resolveKey, stopCheckEntry } from '../hooks/register.ts';
+import { resolveConfig, resolveKey } from '../hooks/register.ts';
+import { stopCheckEntry } from '../src/features/stop-check/ledger.ts';
 import type { StopCheckResult } from '../src/features/stop-check/check.ts';
 
 describe('resolveProvider', () => {
@@ -85,7 +86,13 @@ describe('stopCheckEntry', () => {
       facts: { toolCalls: 3, filesEdited: 1, checksRun: 1 },
       inputTokens: 12,
     } as unknown as StopCheckResult;
-    const entry = stopCheckEntry(resolveConfig({ provider: 'jev' }), 't1', result, 40, 'now');
+    const entry = stopCheckEntry(
+      { mode: 'shadow', provider: 'jev', model: 'jev-1.14.0' },
+      't1',
+      result,
+      40,
+      'now',
+    );
     expect(entry).toMatchObject({
       feature: 'stop-check',
       provider: 'jev',

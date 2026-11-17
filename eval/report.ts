@@ -78,7 +78,13 @@ function sweep(
 
 /** A plain-text summary of a replay: what the rules settled and how each threshold would act. */
 export function report(rows: readonly Row[], labels: readonly Label[] = []): string {
-  const verdicts: Verdict[] = ['nothing_to_check', 'verified', 'failing_check', 'unverified'];
+  const verdicts: Verdict[] = [
+    'nothing_to_check',
+    'verified',
+    'failing_check',
+    'unverified',
+    'unknown',
+  ];
   const sessions = new Set(rows.map((row) => row.session)).size;
   const projects = new Set(rows.map((row) => row.project)).size;
   const tokens = rows.reduce((sum, row) => sum + row.inputTokens, 0);

@@ -2,7 +2,7 @@
 
 Tooling that lets a coding agent's harness ask a decision model typed questions about the session
 and act on the probabilities. It targets several harnesses and several models (RFC-1, ADR-7). Today
-the Claude Code plugin is the only adapter and SubQ Snap the only model called. Decisions are recorded in `docs/adr/` and managed with `urzua`; read the
+the Claude Code plugin and the command-line adapter for Codex are the adapters, and SubQ Snap is the only model called. Decisions are recorded in `docs/adr/` and managed with `urzua`; read the
 accepted records before changing behaviour they cover.
 
 ## Rules
@@ -37,6 +37,7 @@ accepted records before changing behaviour they cover.
 | `src/decision/` | The decisions API client and the provider table.                     |
 | `src/features/` | One folder per feature: a pure decision function and its policy.     |
 | `hooks/`        | The Claude Code adapter.                                             |
+| `cli/`          | The command-line adapter for harnesses with command hooks.           |
 | `eval/`         | Replay of recorded sessions through a feature.                       |
 | `tests/`        | Unit tests.                                                          |
 | `docs/`         | Records, one folder per type: adr, rfc, spec, epic, milestone, task. |
