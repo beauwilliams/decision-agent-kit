@@ -1,0 +1,19 @@
+Codex 0.167.2, 2026-11-17.
+
+Hook events named in the input schemas inside the Codex binary:
+  SessionStart, SessionEnd, UserPromptSubmit, PreToolUse, PostToolUse, PermissionRequest,
+  Stop, SubagentStart, SubagentStop, PreCompact, PostCompact, Interrupt
+
+Events that ran a command hook in a `codex exec` session that made three shell calls:
+  SessionStart 1, UserPromptSubmit 1, PreToolUse 3, PostToolUse 3, Stop 1, SessionEnd 1
+What each received is in hook-inputs.json.
+
+Not observed: PermissionRequest, the subagent events, the compaction events and Interrupt did not
+fire in this session. A file edit was not observed either: the shell sandbox failed in the test
+environment, so the agent never reached an edit.
+
+What a Stop hook may print, from the output schema in the binary:
+  continue, decision ("block") with reason, stopReason, suppressOutput, systemMessage
+
+A Stop hook that printed {"systemMessage": "..."} ran and completed. The message did not appear
+in the output of `codex exec`. An interactive session was not tried.

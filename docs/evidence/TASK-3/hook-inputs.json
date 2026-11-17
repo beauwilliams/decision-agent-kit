@@ -1,0 +1,68 @@
+{
+  "SessionStart": {
+    "session_id": "01a1e7e1-7092-7001-af20-7b503f219f07",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T05-01-13-01a1e7e1-7092-7001-af20-7b503f219f07.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "SessionStart",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "source": "startup"
+  },
+  "UserPromptSubmit": {
+    "session_id": "01a1e7e1-7092-7001-af20-7b503f219f07",
+    "turn_id": "01a1e7e1-7175-7881-ab9b-7cc1f84254b5",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T05-01-13-01a1e7e1-7092-7001-af20-7b503f219f07.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "UserPromptSubmit",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "prompt": "Fix the bug in add.js so add returns the sum. Then run this and tell me the result: node -e \"import('./add.js').then(m=>console.log(m.add(2,3)))\""
+  },
+  "PreToolUse": {
+    "session_id": "01a1e7e1-7092-7001-af20-7b503f219f07",
+    "turn_id": "01a1e7e1-7175-7881-ab9b-7cc1f84254b5",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T05-01-13-01a1e7e1-7092-7001-af20-7b503f219f07.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "PreToolUse",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "sed -n '1,160p' add.js && git status --short"
+    },
+    "tool_use_id": "exec-88c3be12-6fa6-48cf-8b5b-356706c0ea48"
+  },
+  "PostToolUse": {
+    "session_id": "01a1e7e1-7092-7001-af20-7b503f219f07",
+    "turn_id": "01a1e7e1-7175-7881-ab9b-7cc1f84254b5",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T05-01-13-01a1e7e1-7092-7001-af20-7b503f219f07.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "PostToolUse",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "sed -n '1,160p' add.js && git status --short"
+    },
+    "tool_response": "bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted\n",
+    "tool_use_id": "exec-88c3be12-6fa6-48cf-8b5b-356706c0ea48"
+  },
+  "Stop": {
+    "session_id": "01a1e7e1-7092-7001-af20-7b503f219f07",
+    "turn_id": "01a1e7e1-7175-7881-ab9b-7cc1f84254b5",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T05-01-13-01a1e7e1-7092-7001-af20-7b503f219f07.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "Stop",
+    "model": "gpt-6-luna",
+    "permission_mode": "bypassPermissions",
+    "stop_hook_active": false,
+    "last_assistant_message": "I couldn\u2019t access the workspace: command execution is failing with `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`. So I couldn\u2019t inspect or fix `add.js`, or run the command."
+  },
+  "SessionEnd": {
+    "session_id": "01a1e7e1-7092-7001-af20-7b503f219f07",
+    "transcript_path": "<CODEX_HOME>/sessions/2026/11/17/rollout-2026-11-17T05-01-13-01a1e7e1-7092-7001-af20-7b503f219f07.jsonl",
+    "cwd": "<project>",
+    "hook_event_name": "SessionEnd",
+    "reason": "other"
+  }
+}
