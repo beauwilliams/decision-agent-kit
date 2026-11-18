@@ -12,9 +12,9 @@ accepted records before changing behaviour they cover.
 - A change in direction gets a record first: `urzua new adr "<the decision as a sentence>"`. Never
   number a record by hand. `make records` must stay clean.
 - Work is a task: `urzua new task "<the outcome>"`. Write its acceptance checks before code, add a step to its plan before starting it, and record evidence with the commit it ran against. `urzua roadmap` gives the order of work.
-- Tasks sit in milestones and milestones in epics: a task's `Milestone` names a `MILE-n`, a
-  milestone's `Epic` names an `EPIC-n`. A task's `Kind` is `feature`, `bug` or `chore`; a bug also
-  needs `Severity`. `.urzua/config.yaml` declares all of this and RFC-3 gives the reasons.
+- `urzua explain --types` prints the record types of this repository: their fields, allowed values,
+  statuses, what each refers to and who may accept them. Read it before writing a record; RFC-3
+  gives the reasons.
 - Each acceptance check of a task ends with ` — evidence: code:<path>` (or `test:<path>`, or a
   record's path) once it is met. The record check refuses a Done task with an item that cites
   nothing. Evidence from a live run goes in `docs/evidence/<record>/` with session content removed
