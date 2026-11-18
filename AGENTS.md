@@ -11,6 +11,8 @@ accepted records before changing behaviour they cover.
 - Never commit to `main`. One pull request per change, from a fresh branch.
 - A change in direction gets a record first: `urzua new adr "<the decision as a sentence>"`. Never
   number a record by hand. `make records` must stay clean.
+- When a task starts or finishes, update its milestone's `Status` and that milestone's epic in the
+  same change. `make records` fails when a parent's status disagrees with its children.
 - Work is a task: `urzua new task "<the outcome>"`. Write its acceptance checks before code, add a step to its plan before starting it, and record evidence with the commit it ran against. `urzua roadmap` gives the order of work.
 - `urzua explain --types` prints the record types of this repository: their fields, allowed values,
   statuses, what each refers to and who may accept them. Read it before writing a record; RFC-3

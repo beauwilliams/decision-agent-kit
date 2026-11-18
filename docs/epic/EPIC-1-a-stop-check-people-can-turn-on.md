@@ -1,6 +1,6 @@
 ---
 Stable-Id: 01M7KCZFGKXK1X7P7PA2JTW0NB
-Status: Planned
+Status: Active
 Date: 2026-11-17
 Author: beauwilliams
 Implements: SPEC-1

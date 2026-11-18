@@ -39,6 +39,7 @@ plugin-load: ## Install the plugin into scratch profiles for Claude Code and Cod
 .PHONY: records
 records: ## Validate the decision records
 	urzua check
+	node scripts/parent-status-check.ts
 
 .PHONY: hooks-install
 hooks-install: ## Wire the git hooks that run the record check
