@@ -157,6 +157,7 @@ record_types:
       - name: Milestone
         targets:
           - milestone
+        part_of: true
       - Depends-on
       - Blocks
       - Implements
@@ -176,6 +177,8 @@ record_types:
         - WontDo
       initial:
         - Open
+      progress:
+        - InProgress
       transitions:
         Open:
           - InProgress
@@ -239,6 +242,7 @@ record_types:
       - name: Epic
         targets:
           - epic
+        part_of: true
       - Depends-on
       - Blocks
       - Implements
@@ -258,6 +262,8 @@ record_types:
         - WontDo
       initial:
         - Planned
+      progress:
+        - InProgress
       transitions:
         Planned:
           - InProgress
@@ -298,6 +304,8 @@ record_types:
         - Dropped
       initial:
         - Planned
+      progress:
+        - Active
       transitions:
         Planned:
           - Active
@@ -399,3 +407,6 @@ harness:
 # Examine a record `urzua new` just wrote before it is staged.
 discovery:
   include_untracked: true
+
+export:
+  link_prefix: https://github.com/urzuahq/decision-agent-kit/blob/main/
